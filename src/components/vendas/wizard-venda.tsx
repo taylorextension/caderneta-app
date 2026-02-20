@@ -439,12 +439,8 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
               {/* Data específica e À vista */}
               <div className="flex flex-wrap gap-2 mb-4">
                 {/* Data específica */}
-                <button
-                  onClick={() => {
-                    setShowCustomDate(true)
-                    vencimentoInputRef.current?.showPicker()
-                  }}
-                  className={`flex-1 min-w-[120px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
+                <label
+                  className={`flex-1 min-w-[120px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer text-center ${
                     showCustomDate
                       ? 'bg-black text-white border-black'
                       : 'bg-white text-text-primary border-gray-300'
@@ -458,6 +454,7 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                     type="date"
                     value={vencimentoCustom}
                     min={toISODateLocal(new Date())}
+                    onClick={() => setShowCustomDate(true)}
                     onChange={(e) => {
                       const value = e.target.value
                       setShowCustomDate(true)
@@ -466,7 +463,7 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                     }}
                     className="absolute opacity-0 w-0 h-0"
                   />
-                </button>
+                </label>
 
                 {/* À vista */}
                 <button
