@@ -1,0 +1,239 @@
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { gerarBRCode, gerarQRDataURL } from '@/lib/pix'
+import { formatCurrencyShort } from '@/lib/format'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import type { Nota, Profile, ItemNota } from '@/types/database'
+
+interface NotaComProfile extends Nota {
+  profiles: Pick<Profile, 'nome_loja' | 'pix_chave' | 'pix_tipo' | 'pix_nome' | 'pix_cidade'>
+}
+
+export default function PublicPage() {
+  const params = useParams()
+  const id = params.id as string
+  const [nota, setNota] = useState<NotaComProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [qrUrl, setQrUrl] = useState<string>('')
+  const [brCode, setBrCode] = useState<string>('')
+  const [copied, setCopied] = useState(false)
+  const [notFound, setNotFound] = useState(false)
+
+  const fetchNota = useCallback(async () => {
+    try {
+      setLoading(true)
+      const supabase = createClient()
+
+      const { data, error } = await supabase
+        .from('notas')
+        .select('*, profiles!notas_user_id_fkey(nome_loja, pix_chave, pix_tipo, pix_nome, pix_cidade)')
+        .eq('id', id)
+        .single()
+
+      if (error || !data) {
+        setNotFound(true)
+        return
+      }
+
+      const notaData = data as unknown as NotaComProfile
+      setNota(notaData)
+
+      // Track link opened
+      fetch('/api/eventos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nota_id: id,
+          cliente_id: notaData.cliente_id,
+          user_id: notaData.user_id,
+          tipo: 'link_aberto',
+        }),
+      })
+
+      // Track time on page
+      const startTime = Date.now()
+      const handleUnload = () => {
+        const seconds = Math.floor((Date.now() - startTime) / 1000)
+        navigator.sendBeacon(
+          '/api/eventos',
+          JSON.stringify({
+            nota_id: id,
+            cliente_id: notaData.cliente_id,
+            user_id: notaData.user_id,
+            tipo: 'tempo_pagina',
+            metadata: { segundos: seconds },
+          })
+        )
+      }
+      window.addEventListener('beforeunload', handleUnload)
+
+      // Generate Pix
+      if (notaData.profiles?.pix_chave) {
+        const code = gerarBRCode({
+          chave: notaData.profiles.pix_chave,
+          nome: notaData.profiles.pix_nome || 'LOJISTA',
+          cidade: notaData.profiles.pix_cidade || 'SAO PAULO',
+          valor: Number(notaData.valor),
+          txid: id.substring(0, 25),
+        })
+        setBrCode(code)
+
+        const qr = await gerarQRDataURL({
+          chave: notaData.profiles.pix_chave,
+          nome: notaData.profiles.pix_nome || 'LOJISTA',
+          cidade: notaData.profiles.pix_cidade || 'SAO PAULO',
+          valor: Number(notaData.valor),
+          txid: id.substring(0, 25),
+        })
+        setQrUrl(qr)
+      }
+
+      return () => window.removeEventListener('beforeunload', handleUnload)
+    } catch {
+      setNotFound(true)
+    } finally {
+      setLoading(false)
+    }
+  }, [id])
+
+  useEffect(() => {
+    fetchNota()
+  }, [fetchNota])
+
+  async function handleCopyPix() {
+    if (!brCode || !nota) return
+    try {
+      await navigator.clipboard.writeText(brCode)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 3000)
+
+      fetch('/api/eventos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nota_id: id,
+          cliente_id: nota.cliente_id,
+          user_id: nota.user_id,
+          tipo: 'pix_copiado',
+        }),
+      })
+    } catch {
+      // Clipboard failed silently
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+        <Skeleton className="h-8 w-48 mb-4" />
+        <Skeleton className="h-64 w-64 mb-4" />
+        <Skeleton className="h-12 w-full max-w-xs" />
+      </div>
+    )
+  }
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+        <h1 className="text-xl font-semibold mb-2">Nota não encontrada</h1>
+        <p className="text-sm text-text-secondary">
+          Este link pode estar expirado ou incorreto.
+        </p>
+      </div>
+    )
+  }
+
+  if (!nota) return null
+
+  const isPaid = nota.status === 'pago'
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col items-center p-6">
+      <div className="w-full max-w-sm">
+        <h1 className="text-xl font-semibold text-center mb-1">
+          {nota.profiles?.nome_loja || 'Caderneta'}
+        </h1>
+
+        {isPaid ? (
+          <div className="text-center mt-8">
+            <p className="text-lg font-semibold text-success">Pago ✓</p>
+            <p className="text-sm text-text-secondary mt-1">
+              Esta conta já foi acertada.
+            </p>
+          </div>
+        ) : (
+          <>
+            {nota.itens && nota.itens.length > 0 && (
+              <div className="mt-6 border border-divider rounded-none p-4">
+                {nota.itens.map((item: ItemNota, i: number) => (
+                  <div
+                    key={i}
+                    className="flex justify-between py-1.5 text-sm"
+                  >
+                    <span>
+                      {item.descricao}{' '}
+                      {item.quantidade > 1 && `(${item.quantidade}x)`}
+                    </span>
+                    <span className="font-medium">
+                      {formatCurrencyShort(item.quantidade * item.valor_unitario)}
+                    </span>
+                  </div>
+                ))}
+                <div className="border-t border-divider mt-2 pt-2 flex justify-between text-sm font-bold">
+                  <span>Total</span>
+                  <span>{formatCurrencyShort(Number(nota.valor))}</span>
+                </div>
+              </div>
+            )}
+
+            {(!nota.itens || nota.itens.length === 0) && (
+              <div className="mt-6 text-center">
+                <p className="text-3xl font-bold">
+                  {formatCurrencyShort(Number(nota.valor))}
+                </p>
+                {nota.descricao && (
+                  <p className="text-sm text-text-secondary mt-1">
+                    {nota.descricao}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {nota.profiles?.pix_chave ? (
+              <>
+                {qrUrl && (
+                  <div className="mt-6 flex justify-center">
+                    <img
+                      src={qrUrl}
+                      alt="QR Code Pix"
+                      width={256}
+                      height={256}
+                      className="rounded-lg"
+                    />
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleCopyPix}
+                  className="w-full mt-6"
+                >
+                  {copied ? 'Copiado ✓' : 'Copiar código Pix'}
+                </Button>
+              </>
+            ) : (
+              <div className="mt-6 text-center">
+                <p className="text-sm text-text-muted">
+                  Pix não configurado pelo lojista
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
