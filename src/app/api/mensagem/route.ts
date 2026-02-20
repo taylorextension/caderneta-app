@@ -58,29 +58,37 @@ export async function POST(request: NextRequest) {
   try {
     const data: MensagemRequest = await request.json()
     
-    console.log('Gerando mensagem para:', data.cliente_nome)
+    console.log('=== API MENSAGEM ===')
+    console.log('Cliente:', data.cliente_nome)
     console.log('Notas:', data.notas?.length)
+    console.log('GEMINI_API_KEY exists:', !!process.env.GEMINI_API_KEY)
+    console.log('GOOGLE_API_KEY exists:', !!process.env.GOOGLE_API_KEY)
 
     const prompt = buildPrompt(data)
-    console.log('Prompt length:', prompt.length)
+    console.log('Prompt:', prompt.substring(0, 200))
 
-    const { text } = await generateText({
-      model: geminiFlash(),
-      prompt: prompt,
-      temperature: 0.7,
-      maxTokens: 500,
-    })
+    try {
+      const result = await generateText({
+        model: geminiFlash(),
+        prompt: prompt,
+        temperature: 0.7,
+        maxTokens: 500,
+      })
+      
+      console.log('Resultado:', result)
+      console.log('Texto gerado:', result?.text?.substring(0, 100))
 
-    console.log('Resposta gerada:', text?.substring(0, 100))
+      if (!result.text || result.text.trim().length < 10) {
+        throw new Error('Resposta vazia ou muito curta')
+      }
 
-    if (!text || text.trim().length < 10) {
-      throw new Error('Resposta vazia ou muito curta da IA')
+      return NextResponse.json({ mensagem: result.text.trim() })
+    } catch (aiError) {
+      console.error('Erro da IA:', aiError)
+      throw aiError
     }
-
-    return NextResponse.json({ mensagem: text.trim() })
   } catch (error) {
-    console.error('Mensagem error:', error)
-    // Retorna mensagem padrão em caso de erro
+    console.error('Erro geral:', error)
     return NextResponse.json(
       { mensagem: 'Oi! Passando pra lembrar da continha. Dá pra acertar pelo Pix? Obrigado!' },
       { status: 200 }
