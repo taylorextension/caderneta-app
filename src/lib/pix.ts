@@ -1,79 +1,159 @@
 import QRCode from "qrcode";
 
-interface PixParams {
-  chave: string;        // Chave Pix (CPF sem pontos, CNPJ, email, telefone com +55)
-  nome: string;         // Nome do recebedor (máx 25 chars)
-  cidade: string;       // Cidade do recebedor (máx 15 chars)
-  valor?: number;       // Valor opcional
-  txid?: string;        // Identificador da transação (opcional, default: "***")
-  infoAdicional?: string; // Informação adicional (opcional, máx 72 chars)
+export interface PixParams {
+  chave: string;        // CPF/CNPJ/email/telefone/+55/UUID
+  nome: string;         // Merchant Name (campo 59, máx 25)
+  cidade: string;       // Merchant City (campo 60, máx 15)
+  valor?: number;       // Transaction Amount (campo 54, opcional)
+  txid?: string;        // Reference Label (62-05), máx 25 (a-zA-Z0-9)
+  infoAdicional?: string; // Pix: campo 26-02 (opcional, livre com limite)
 }
 
-// Remove acentos e caracteres especiais para o padrão EMV
-function sanitizeMerchantText(text: string, maxLen: number): string {
-  return text
+const encoder = new TextEncoder();
+
+/** Comprimento em bytes UTF-8 (para TLV). */
+function utf8Len(s: string): number {
+  return encoder.encode(s).length;
+}
+
+/**
+ * Monta um campo TLV (ID + LEN + VALUE).
+ * LEN é sempre 2 dígitos decimais e representa o tamanho do VALUE.
+ */
+function tlv(id: string, value: string): string {
+  if (!/^\d{2}$/.test(id)) {
+    throw new Error(`ID inválido (esperado 2 dígitos): "${id}"`);
+  }
+  const len = utf8Len(value);
+  if (len > 99) {
+    throw new Error(`Campo ${id} excede 99 bytes (len=${len}). Reduza o conteúdo.`);
+  }
+  return `${id}${String(len).padStart(2, "0")}${value}`;
+}
+
+/** Monta um template TLV cujo value é a concatenação de TLVs internos. */
+function template(id: string, children: string[]): string {
+  return tlv(id, children.join(""));
+}
+
+/**
+ * Remove acentos e caracteres problemáticos, deixa em CAIXA ALTA,
+ * colapsa espaços e corta no tamanho máximo.
+ */
+function sanitizeMerchantText(input: string, maxLen: number): string {
+  const noAccents = input
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // remove acentos
+    .replace(/[\u0300-\u036f]/g, ""); // remove diacríticos
+  
+  const cleaned = noAccents
     .toUpperCase()
-    .substring(0, maxLen);
+    .replace(/[^A-Z0-9 @&.,\-\/]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLen);
+  
+  if (!cleaned) {
+    throw new Error("Texto ficou vazio após sanitização (nome/cidade).");
+  }
+  return cleaned;
 }
 
-// Normaliza chave Pix (remove espaços, garante formato correto)
-function normalizePixKey(key: string): string {
-  return key.trim();
+/**
+ * Normaliza chave Pix conforme exemplos do Manual do Pix:
+ * - Email: string com @ (mantém, normaliza para lower-case)
+ * - CPF: 11 dígitos
+ * - CNPJ: 14 caracteres (numérico ou alfanumérico)
+ * - Telefone: +55... (aceita também 55... e converte para +55...)
+ * - Aleatória: UUID com hífens
+ */
+function normalizePixKey(raw: string): string {
+  const s = raw.trim();
+  if (!s) throw new Error("Chave Pix vazia.");
+  
+  // Email
+  if (s.includes("@")) return s.toLowerCase();
+  
+  // UUID (chave aleatória)
+  const lower = s.toLowerCase();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(lower)) {
+    return lower;
+  }
+  
+  // Telefone: aceita +55..., ou 55... sem "+"
+  const digits = s.replace(/\D/g, "");
+  if (s.startsWith("+")) {
+    const phone = s.replace(/[^\d+]/g, "");
+    if (!/^\+\d{8,15}$/.test(phone)) {
+      throw new Error(`Telefone Pix inválido (esperado +55...): "${raw}"`);
+    }
+    return phone;
+  }
+  if (digits.startsWith("55") && digits.length >= 12 && digits.length <= 15) {
+    return `+${digits}`;
+  }
+  
+  // CPF/CNPJ (remove pontuação e mantém alfanumérico)
+  const alnum = s.replace(/[^0-9A-Za-z]/g, "");
+  if (/^\d{11}$/.test(alnum)) return alnum; // CPF
+  if (/^[0-9A-Za-z]{14}$/.test(alnum)) return alnum.toUpperCase(); // CNPJ
+  
+  // Fallback: se tem tamanho aceitável para o campo "chave" (até 77)
+  if (alnum.length >= 1 && alnum.length <= 77) return alnum;
+  
+  throw new Error(`Formato de chave Pix não reconhecido: "${raw}"`);
 }
 
-// Normaliza TXID (alfanumérico, máx 25 chars)
+/**
+ * Normaliza txid para BR Code (62-05).
+ * - Permitidos: a-z A-Z 0-9
+ * - Máx: 25
+ * - Se ausente/vazio: "***" (conforme orientação do manual)
+ */
 function normalizeTxid(txid?: string): string {
   if (!txid) return "***";
-  return txid.replace(/[^a-zA-Z0-9]/g, "").substring(0, 25) || "***";
+  const cleaned = txid.replace(/[^0-9A-Za-z]/g, "").slice(0, 25);
+  return cleaned.length ? cleaned : "***";
 }
 
-// Formata valor com 2 casas decimais
-function formatAmount(valor: number): string {
-  return valor.toFixed(2);
+/** Formata valor do campo 54 (Transaction Amount) com 2 casas e "." */
+function formatAmount(amount: number): string {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("valor deve ser um número > 0 quando informado.");
+  }
+  const rounded = Math.round(amount * 100) / 100;
+  const s = rounded.toFixed(2); // "1.00"
+  if (s.length > 13) throw new Error("valor muito grande para o campo 54 (max 13 chars).");
+  return s;
 }
 
-// TLV: Tag + Length + Value
-function tlv(tag: string, value: string): string {
-  const len = value.length.toString().padStart(2, "0");
-  return `${tag}${len}${value}`;
-}
-
-// Template: Tag + Length + (concatenação de valores TLV)
-function template(tag: string, children: string[]): string {
-  const value = children.join("");
-  const len = value.length.toString().padStart(2, "0");
-  return `${tag}${len}${value}`;
-}
-
-// CRC16-CCITT com polinômio 0x1021 e inicial 0xFFFF
-function crc16ccitt(str: string): string {
+/**
+ * CRC16 (CRC-16/CCITT-FALSE): polinômio 0x1021, init 0xFFFF.
+ * Retorna 4 hex uppercase.
+ */
+function crc16ccitt(payload: string): string {
+  const bytes = encoder.encode(payload);
   let crc = 0xffff;
-  for (let i = 0; i < str.length; i++) {
-    crc ^= str.charCodeAt(i) << 8;
-    for (let j = 0; j < 8; j++) {
-      if (crc & 0x8000) {
-        crc = (crc << 1) ^ 0x1021;
-      } else {
-        crc = crc << 1;
-      }
-      crc &= 0xffff;
+  for (const b of bytes) {
+    crc ^= (b << 8);
+    for (let i = 0; i < 8; i++) {
+      const msb = crc & 0x8000;
+      crc = (crc << 1) & 0xffff;
+      if (msb) crc ^= 0x1021;
     }
   }
   return crc.toString(16).toUpperCase().padStart(4, "0");
 }
 
 /**
- * Gera o BR Code Pix (payload EMV) válido conforme especificação do Banco Central.
+ * Gera o BR Code Pix estático ("copia e cola") compatível com bancos.
  */
 export function gerarBRCode(p: PixParams): string {
-  // Sanitiza dados do recebedor
+  const pixKey = normalizePixKey(p.chave);
   const merchantName = sanitizeMerchantText(p.nome, 25);
   const merchantCity = sanitizeMerchantText(p.cidade, 15);
-  const pixKey = normalizePixKey(p.chave);
   
-  // Info adicional opcional (máx 72 chars)
+  // Campo Pix "infoAdicional" (26-02) é opcional.
+  // Se usar, mantenha curto — existe limite e ele disputa espaço com a chave.
   const infoAdicional = p.infoAdicional 
     ? sanitizeMerchantText(p.infoAdicional, 72) 
     : undefined;
@@ -99,8 +179,9 @@ export function gerarBRCode(p: PixParams): string {
   fields.push(tlv("53", "986"));
 
   // 54: Transaction Amount (opcional)
-  if (p.valor !== undefined && p.valor > 0) {
-    fields.push(tlv("54", formatAmount(p.valor)));
+  if (p.valor !== undefined) {
+    // só inclui se >0; para "valor em aberto", não inclua o campo 54
+    if (p.valor > 0) fields.push(tlv("54", formatAmount(p.valor)));
   }
 
   // 58: Country Code = BR
