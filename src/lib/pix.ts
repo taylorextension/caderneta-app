@@ -18,12 +18,12 @@ export function gerarBRCode(p: PixParams): string {
     msg.setField(new PIX.Fields.Transaction_Amount(p.valor))
   }
   
-  // Adiciona TXID (identificador da transação)
-  if (p.txid) {
-    const additionalData = new PIX.Groups.Grp_Additional_Data_Field()
-    additionalData.Children.push(new PIX.Fields.Additional_Data_Field('05', p.txid.substring(0, 25)))
-    msg.setField(additionalData)
-  }
+  // CAMPO 62 (Additional Data Field Template) É MANDATÓRIO no BR Code
+  // Dentro dele, o campo 05 (TXID / Reference Label) também é mandatório
+  const additionalData = new PIX.Groups.Grp_Additional_Data_Field()
+  const txid = p.txid ? p.txid.substring(0, 25) : '***'
+  additionalData.Children.push(new PIX.Fields.Additional_Data_Field('05', txid))
+  msg.setField(additionalData)
   
   // Retorna o BRCode válido
   return msg.getStringValue()
