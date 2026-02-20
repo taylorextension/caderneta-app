@@ -2,17 +2,18 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion } from 'motion/react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
 import { PageTransition } from '@/components/layout/page-transition'
 import { FAB } from '@/components/layout/fab'
-import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
-import { UsersIcon } from '@heroicons/react/24/outline'
+import { UsersIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { formatCurrencyShort } from '@/lib/format'
+import { cn } from '@/lib/cn'
 
 interface ClienteComDivida {
   id: string
@@ -22,6 +23,7 @@ interface ClienteComDivida {
   total_pendente: number
   notas_pendentes: number
   dias_atraso_max: number | null
+  dias_para_vencer: number | null
 }
 
 type SortOption = 'divida' | 'atraso' | 'nome'
@@ -58,10 +60,11 @@ export default function ClientesPage() {
 
       if (nError) throw nError
 
+      const hoje = new Date()
       const result: ClienteComDivida[] = (clientesData || []).map((c) => {
         const notasCliente = (notasData || []).filter((n) => n.cliente_id === c.id)
         const total = notasCliente.reduce((acc, n) => acc + Number(n.valor), 0)
-        const hoje = new Date()
+        
         const diasAtraso = notasCliente
           .filter((n) => n.data_vencimento)
           .map((n) => {
@@ -69,6 +72,14 @@ export default function ClientesPage() {
             return Math.floor((hoje.getTime() - venc.getTime()) / 86400000)
           })
           .filter((d) => d > 0)
+
+        const diasParaVencer = notasCliente
+          .filter((n) => n.data_vencimento)
+          .map((n) => {
+            const venc = new Date(n.data_vencimento + 'T00:00:00')
+            return Math.floor((venc.getTime() - hoje.getTime()) / 86400000)
+          })
+          .filter((d) => d >= 0 && d <= 7)
 
         return {
           id: c.id,
@@ -78,6 +89,7 @@ export default function ClientesPage() {
           total_pendente: total,
           notas_pendentes: notasCliente.length,
           dias_atraso_max: diasAtraso.length > 0 ? Math.max(...diasAtraso) : null,
+          dias_para_vencer: diasParaVencer.length > 0 ? Math.min(...diasParaVencer) : null,
         }
       })
 
@@ -106,17 +118,24 @@ export default function ClientesPage() {
       return a.nome.localeCompare(b.nome)
     })
 
-  function getStatusDot(c: ClienteComDivida) {
-    if (c.dias_atraso_max && c.dias_atraso_max > 0) return 'bg-dot-red'
-    if (c.total_pendente > 0) return 'bg-dot-yellow'
-    return 'bg-dot-green'
+  function getStatusDot(c: ClienteComDivida): string {
+    if (c.dias_atraso_max && c.dias_atraso_max > 0) return 'bg-[#EF4444]'
+    if (c.dias_para_vencer !== null) return 'bg-[#EAB308]'
+    if (c.total_pendente > 0) return 'bg-[#EAB308]'
+    return 'bg-[#22C55E]'
   }
 
-  function getStatusText(c: ClienteComDivida) {
-    if (c.dias_atraso_max && c.dias_atraso_max > 0)
-      return `Vencida há ${c.dias_atraso_max} dias`
-    if (c.total_pendente > 0) return `${c.notas_pendentes} nota${c.notas_pendentes > 1 ? 's' : ''} pendente${c.notas_pendentes > 1 ? 's' : ''}`
-    return 'Tudo pago'
+  function getStatusSubtext(c: ClienteComDivida): { text: string; className: string } {
+    if (c.dias_atraso_max && c.dias_atraso_max > 0) {
+      return { text: `Vencida há ${c.dias_atraso_max} dia${c.dias_atraso_max > 1 ? 's' : ''}`, className: 'text-red-500' }
+    }
+    if (c.dias_para_vencer !== null) {
+      return { text: `Vence em ${c.dias_para_vencer} dia${c.dias_para_vencer > 1 ? 's' : ''}`, className: 'text-amber-600' }
+    }
+    if (c.total_pendente > 0) {
+      return { text: `${c.notas_pendentes} nota${c.notas_pendentes > 1 ? 's' : ''} pendente${c.notas_pendentes > 1 ? 's' : ''}`, className: 'text-[#6B7280]' }
+    }
+    return { text: 'Tudo pago', className: 'text-[#6B7280]' }
   }
 
   if (loading) {
@@ -134,22 +153,29 @@ export default function ClientesPage() {
   return (
     <PageTransition>
       <div className="p-6">
-        <h1 className="text-xl font-semibold text-text-primary mb-4">
+        <h1 className="text-xl font-semibold text-[#02090A] mb-4">
           Clientes · {clientes.length}
         </h1>
 
-        <Input
-          placeholder="Buscar..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        {/* Busca estilizada */}
+        <div className="relative mb-4">
+          <MagnifyingGlassIcon className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9CA3AF]" />
+          <input
+            type="text"
+            placeholder="Buscar..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-transparent border-b border-zinc-300 rounded-none py-2 pl-6 text-sm text-[#02090A] placeholder:text-[#9CA3AF] focus:outline-none focus:border-b-black transition-colors"
+          />
+        </div>
 
+        {/* Sort dropdown */}
         <div className="flex items-center justify-between mt-4 mb-4">
-          <span className="text-xs text-text-muted">Ordenar</span>
+          <span className="text-xs text-[#9CA3AF]">Ordenar</span>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortOption)}
-            className="text-xs font-medium text-text-primary bg-transparent outline-none"
+            className="text-sm font-medium text-[#02090A] bg-transparent outline-none cursor-pointer"
           >
             <option value="divida">Maior dívida ▾</option>
             <option value="atraso">Mais atrasado ▾</option>
@@ -166,29 +192,43 @@ export default function ClientesPage() {
             onAction={() => setShowWizard(true)}
           />
         ) : (
-          <Card className="divide-y divide-divider">
-            {filtered.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => router.push(`/clientes/${c.id}`)}
-                className="w-full py-3 text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <span className={`h-2.5 w-2.5 rounded-full ${getStatusDot(c)}`} />
-                  <p className="text-sm font-medium truncate">{c.nome}</p>
-                  {c.total_pendente > 0 && (
-                    <span className="text-sm text-text-secondary shrink-0">
-                      · {formatCurrencyShort(c.total_pendente)}
-                      {c.notas_pendentes > 0 ? ` · ${c.notas_pendentes} not` : ''}
-                      {c.notas_pendentes > 1 ? 'as' : c.notas_pendentes === 1 ? 'a' : ''}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-text-secondary mt-1">
-                  {getStatusText(c)}
-                </p>
-              </button>
-            ))}
+          <Card className="divide-y divide-[#E5E5E5]">
+            {filtered.map((c) => {
+              const status = getStatusSubtext(c)
+              return (
+                <motion.button
+                  key={c.id}
+                  onClick={() => router.push(`/clientes/${c.id}`)}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full py-3 text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    {/* Dot de status */}
+                    <span className={cn('h-2 w-2 rounded-full shrink-0', getStatusDot(c))} />
+                    
+                    {/* Avatar */}
+                    <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center text-xs font-semibold shrink-0">
+                      {(c.nome?.[0] || 'C').toUpperCase()}
+                    </div>
+                    
+                    {/* Nome e info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[#02090A] truncate">
+                        {c.nome}
+                      </p>
+                      <p className="text-sm text-[#6B7280]">
+                        {formatCurrencyShort(c.total_pendente)} · {c.notas_pendentes} nota{c.notas_pendentes > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Subtexto contextual */}
+                  <p className={cn('text-xs mt-1 pl-11', status.className)}>
+                    {status.text}
+                  </p>
+                </motion.button>
+              )
+            })}
           </Card>
         )}
       </div>
