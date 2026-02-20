@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '')
 
     const { text } = await generateText({
-      model: geminiFlash,
+      model: geminiFlash(),
       messages: [
         {
           role: 'user',

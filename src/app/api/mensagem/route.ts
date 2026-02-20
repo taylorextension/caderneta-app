@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const data: MensagemRequest = await request.json()
 
     const { text } = await generateText({
-      model: geminiFlash,
+      model: geminiFlash(),
       prompt: buildPrompt(data),
     })
 
