@@ -4,20 +4,26 @@ import { geminiFlash } from '@/lib/ai'
 import type { MensagemRequest } from '@/types/api'
 
 function buildPrompt(data: MensagemRequest): string {
-  const maxVezesCobrado = Math.max(...data.notas.map((n) => n.vezes_cobrado))
+  // Validações de segurança
+  if (!data.notas || data.notas.length === 0) {
+    return 'Oi! Passando pra lembrar da continha. Dá pra acertar pelo Pix? Obrigado!'
+  }
+
+  const maxVezesCobrado = Math.max(...data.notas.map((n) => n.vezes_cobrado || 0))
 
   const itensText = data.notas
     .map((n) => {
-      const items = n.itens.length > 0
+      const items = n.itens?.length > 0
         ? n.itens.map((i) => `• ${i.descricao} (${i.quantidade}x R$${i.valor_unitario.toFixed(2)})`).join('\n')
         : n.descricao || 'Compra'
-      return `${items}\nValor: R$${n.valor.toFixed(2)}${n.data_vencimento ? ` | Vencimento: ${n.data_vencimento}` : ''}`
+      return `${items}\nValor: R$${Number(n.valor || 0).toFixed(2)}${n.data_vencimento ? ` | Vencimento: ${n.data_vencimento}` : ''}`
     })
     .join('\n---\n')
 
-  const primeiroNome = data.cliente_nome.split(' ')[0]
+  const nomeCliente = data.cliente_nome || 'Cliente'
+  const primeiroNome = nomeCliente.split(' ')[0]
 
-  return `Gere UMA mensagem de lembrete via WhatsApp de ${data.lojista_nome} (${data.nome_loja}) para ${primeiroNome}.
+  return `Gere UMA mensagem de lembrete via WhatsApp de ${data.lojista_nome || 'Lojista'} (${data.nome_loja || 'Loja'}) para ${primeiroNome}.
 
 REGRAS:
 - PROIBIDO usar: dívida, débito, inadimplente, pendência, cobrança
@@ -35,7 +41,7 @@ REGRAS:
 
 DADOS:
 ${itensText}
-Total: R$${data.total.toFixed(2)}
+Total: R$${Number(data.total || 0).toFixed(2)}
 Vezes cobrado anteriormente: ${maxVezesCobrado}`
 }
 
