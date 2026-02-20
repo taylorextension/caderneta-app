@@ -1,4 +1,8 @@
+import { useState } from 'react'
 import { formatCurrencyShort, formatRelativeDate } from '@/lib/format'
+import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
+import { useUIStore } from '@/stores/ui-store'
 
 interface NotaCardProps {
   nota: {
@@ -33,6 +37,9 @@ export function NotaCard({
   onCobrar,
   onMarcarPago,
 }: NotaCardProps) {
+  const [showConfirm, setShowConfirm] = useState(false)
+  const addToast = useUIStore((s) => s.addToast)
+
   const hoje = new Date()
   const venc = nota.data_vencimento
     ? new Date(nota.data_vencimento + 'T00:00:00')
@@ -47,72 +54,129 @@ export function NotaCard({
       return 'Pago'
     }
     if (!nota.data_vencimento) return 'Sem vencimento'
-    if (vencido) return `Venceu há ${diasAtraso} dias`
+    if (vencido) return `${diasAtraso} dias atrás`
     const diasParaVencer = Math.abs(diasAtraso)
     if (diasParaVencer === 0) return 'Vence hoje'
     if (diasParaVencer === 1) return 'Vence amanhã'
-    return `Vence em ${diasParaVencer} dias`
+    return `em ${diasParaVencer} dias`
   }
 
-  const getAcaoText = () => {
-    if (!ultimaAcao) return null
+  const getAcaoIcon = (tipo: string) => {
+    const icons: Record<string, string> = {
+      lembrete_enviado: '📤',
+      link_aberto: '👀',
+      pix_copiado: '📋',
+    }
+    return icons[tipo] || '📌'
+  }
+
+  const getAcaoText = (tipo: string) => {
     const labels: Record<string, string> = {
       lembrete_enviado: 'Lembrete enviado',
       link_aberto: 'Abriu o link',
       pix_copiado: 'Copiou o Pix',
     }
-    return labels[ultimaAcao.tipo] || ultimaAcao.tipo
+    return labels[tipo] || tipo
   }
 
-  const acaoText = getAcaoText()
+  const formatAcaoTime = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const hoje = new Date()
+    const ontem = new Date(hoje)
+    ontem.setDate(ontem.getDate() - 1)
+    
+    if (date.toDateString() === hoje.toDateString()) {
+      return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    }
+    if (date.toDateString() === ontem.toDateString()) {
+      return 'Ontem'
+    }
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+  }
+
+  const handleConfirmarPago = () => {
+    onMarcarPago()
+    setShowConfirm(false)
+    addToast({
+      message: 'Pagamento registrado!',
+      type: 'success',
+      duration: 5000,
+    })
+  }
+
+  const displayName = cliente.apelido || cliente.nome
 
   return (
-    <div className="bg-white border border-zinc-200 rounded-none p-4">
-      <div className="flex items-start gap-3">
-        {/* Avatar */}
-        {showAvatar && (
-          <div className="h-10 w-10 rounded-full bg-black text-white flex items-center justify-center text-sm font-medium shrink-0">
-            {(cliente.nome?.[0] || 'C').toUpperCase()}
-          </div>
-        )}
-
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-text-primary truncate">
-            {cliente.apelido || cliente.nome}
-          </p>
-          <p className="text-sm text-text-secondary">
-            {formatCurrencyShort(Number(nota.valor))} · {getStatusText()}
-          </p>
-          
-          {/* Indicador da última ação */}
-          {acaoText && (
-            <p className="text-xs text-text-muted mt-1">
-              {acaoText} · {formatRelativeDate(ultimaAcao!.created_at.split('T')[0])}
-            </p>
+    <>
+      <div className="bg-white border border-zinc-200 rounded-none p-4">
+        <div className="flex items-start gap-3">
+          {/* Avatar */}
+          {showAvatar && (
+            <div className="h-10 w-10 rounded-full bg-black text-white flex items-center justify-center text-sm font-semibold shrink-0">
+              {(cliente.nome?.[0] || 'C').toUpperCase()}
+            </div>
           )}
+
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[#02090A] truncate">
+              {displayName}
+            </p>
+            <p className="text-sm text-[#6B7280]">
+              {formatCurrencyShort(Number(nota.valor))} · {getStatusText()}
+            </p>
+            
+            {/* Última ação - só uma linha */}
+            {ultimaAcao && (
+              <p className="text-xs text-[#6B7280] mt-2 flex items-center gap-1">
+                <span>{getAcaoIcon(ultimaAcao.tipo)}</span>
+                <span>{getAcaoText(ultimaAcao.tipo)} · {formatAcaoTime(ultimaAcao.created_at)}</span>
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* Ações */}
-        {nota.status !== 'pago' ? (
-          <div className="flex flex-col items-end gap-2">
+        {/* Botões */}
+        {nota.status !== 'pago' && (
+          <div className="flex gap-2 mt-3">
             <button
-              onClick={onCobrar}
-              className="text-sm font-medium text-text-primary hover:text-black transition-colors"
-            >
-              Cobrar →
-            </button>
-            <button
-              onClick={onMarcarPago}
-              className="text-xs px-2 py-1 rounded-full border border-success text-success hover:bg-success hover:text-white transition-colors"
+              onClick={() => setShowConfirm(true)}
+              className="flex-1 h-10 rounded-full bg-white border border-zinc-300 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
             >
               Pago ✓
             </button>
+            <button
+              onClick={onCobrar}
+              className="flex-1 h-10 rounded-full bg-black text-white text-sm font-medium hover:bg-zinc-800 transition-colors"
+            >
+              Cobrar →
+            </button>
           </div>
-        ) : (
-          <span className="text-sm text-success font-medium">✓</span>
         )}
       </div>
-    </div>
+
+      {/* Modal de confirmação */}
+      <Modal open={showConfirm} onClose={() => setShowConfirm(false)}>
+        <h3 className="text-lg font-semibold mb-2 text-[#02090A]">Confirmar pagamento?</h3>
+        <p className="text-sm text-[#6B7280] mb-6">
+          {displayName} · {formatCurrencyShort(Number(nota.valor))}
+        </p>
+        <div className="flex gap-3">
+          <Button
+            variant="secondary"
+            className="flex-1 h-10 rounded-full"
+            onClick={() => setShowConfirm(false)}
+          >
+            Cancelar
+          </Button>
+          <Button
+            className="flex-1 h-10 rounded-full bg-black text-white"
+            onClick={handleConfirmarPago}
+          >
+            Confirmar ✓
+          </Button>
+        </div>
+      </Modal>
+    </>
   )
 }
