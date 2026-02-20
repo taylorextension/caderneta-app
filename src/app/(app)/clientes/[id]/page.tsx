@@ -284,13 +284,12 @@ export default function ClienteDetailPage() {
           <NotasList
             notas={notas}
             cliente={cliente}
+            eventos={eventos}
+            cobrancas={cobrancas}
             onCobrar={(nota) => setCobrarNotas([notaToComCliente(nota)])}
             onPago={(nota) => setConfirmPago(nota)}
           />
         </div>
-
-        {/* Timeline de eventos (opcional, colapsada) */}
-        <EventosTimeline eventos={eventos} cobrancas={cobrancas} />
       </div>
 
       <FAB onClick={() => setShowWizard(true)} />
@@ -354,11 +353,13 @@ function formatEventTime(dateTime?: string | null) {
 interface NotasListProps {
   notas: Nota[]
   cliente: Cliente | null
+  eventos: Evento[]
+  cobrancas: Cobranca[]
   onCobrar: (nota: Nota) => void
   onPago: (nota: Nota) => void
 }
 
-function NotasList({ notas, cliente, onCobrar, onPago }: NotasListProps) {
+function NotasList({ notas, cliente, eventos, cobrancas, onCobrar, onPago }: NotasListProps) {
   const hoje = new Date()
   
   // Separa notas por status
@@ -400,6 +401,8 @@ function NotasList({ notas, cliente, onCobrar, onPago }: NotasListProps) {
                 nota={nota}
                 cliente={cliente}
                 status="vencida"
+                eventos={eventos.filter(e => e.nota_id === nota.id)}
+                cobrancas={cobrancas.filter(c => c.nota_id === nota.id)}
                 onCobrar={() => onCobrar(nota)}
                 onPago={() => onPago(nota)}
               />
@@ -424,6 +427,8 @@ function NotasList({ notas, cliente, onCobrar, onPago }: NotasListProps) {
                 nota={nota}
                 cliente={cliente}
                 status="breve"
+                eventos={eventos.filter(e => e.nota_id === nota.id)}
+                cobrancas={cobrancas.filter(c => c.nota_id === nota.id)}
                 onCobrar={() => onCobrar(nota)}
                 onPago={() => onPago(nota)}
               />
@@ -448,6 +453,8 @@ function NotasList({ notas, cliente, onCobrar, onPago }: NotasListProps) {
                 nota={nota}
                 cliente={cliente}
                 status="paga"
+                eventos={eventos.filter(e => e.nota_id === nota.id)}
+                cobrancas={cobrancas.filter(c => c.nota_id === nota.id || (c.notas_ids && c.notas_ids.includes(nota.id)))}
                 onCobrar={() => {}}
                 onPago={() => {}}
               />
@@ -463,11 +470,15 @@ interface NotaItemProps {
   nota: Nota
   cliente: Cliente | null
   status: 'vencida' | 'breve' | 'paga'
+  eventos: Evento[]
+  cobrancas: Cobranca[]
   onCobrar: () => void
   onPago: () => void
 }
 
-function NotaItem({ nota, cliente, status, onCobrar, onPago }: NotaItemProps) {
+function NotaItem({ nota, cliente, status, eventos, cobrancas, onCobrar, onPago }: NotaItemProps) {
+  const [showHistorico, setShowHistorico] = useState(false)
+  
   const getDataText = () => {
     if (status === 'paga') {
       return 'Pago' + (nota.data_pagamento ? ` · ${formatRelativeDate(nota.data_pagamento.split('T')[0])}` : '')
@@ -475,80 +486,74 @@ function NotaItem({ nota, cliente, status, onCobrar, onPago }: NotaItemProps) {
     if (!nota.data_vencimento) return 'Sem vencimento'
     return formatRelativeDate(nota.data_vencimento)
   }
-
-  return (
-    <div className="flex items-center gap-3 p-4">
-      {/* Avatar */}
-      <div className="h-10 w-10 rounded-full bg-black text-white flex items-center justify-center text-sm font-medium shrink-0">
-        {(cliente?.nome?.[0] || 'C').toUpperCase()}
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-text-primary truncate">
-          {nota.descricao || 'Compra'}
-        </p>
-        <p className="text-sm text-text-secondary">
-          {formatCurrencyShort(Number(nota.valor))} · {getDataText()}
-        </p>
-      </div>
-
-      {/* Ações */}
-      {status !== 'paga' ? (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onCobrar}
-            className="text-sm font-medium text-text-primary hover:text-black transition-colors"
-          >
-            Cobrar →
-          </button>
-        </div>
-      ) : (
-        <span className="text-sm text-success font-medium">✓</span>
-      )}
-    </div>
-  )
-}
-
-interface EventosTimelineProps {
-  eventos: Evento[]
-  cobrancas: Cobranca[]
-}
-
-function EventosTimeline({ eventos, cobrancas }: EventosTimelineProps) {
-  const [expandido, setExpandido] = useState(false)
   
-  if (eventos.length === 0 && cobrancas.length === 0) return null
-
-  const labels: Record<string, string> = {
-    link_aberto: 'Abriu o link',
-    pix_copiado: 'Copiou o Pix',
-    marcou_pago: 'Marcado como pago',
-    desfez_pago: 'Pagamento desfeito',
-  }
+  // Só mostra histórico se tiver eventos ou cobranças
+  const temHistorico = eventos.length > 0 || cobrancas.length > 0
 
   return (
-    <div className="mt-8">
-      <button
-        onClick={() => setExpandido(!expandido)}
-        className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
-      >
-        <span>{expandido ? '▼' : '▶'}</span>
-        Histórico de eventos ({eventos.length + cobrancas.length})
-      </button>
+    <div className="p-4">
+      <div className="flex items-center gap-3">
+        {/* Avatar */}
+        <div className="h-10 w-10 rounded-full bg-black text-white flex items-center justify-center text-sm font-medium shrink-0">
+          {(cliente?.nome?.[0] || 'C').toUpperCase()}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-text-primary truncate">
+            {nota.descricao || 'Compra'}
+          </p>
+          <p className="text-sm text-text-secondary">
+            {formatCurrencyShort(Number(nota.valor))} · {getDataText()}
+          </p>
+        </div>
+
+        {/* Ações */}
+        {status !== 'paga' ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onCobrar}
+              className="text-sm font-medium text-text-primary hover:text-black transition-colors"
+            >
+              Cobrar →
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            {temHistorico && (
+              <button
+                onClick={() => setShowHistorico(!showHistorico)}
+                className="text-xs text-text-muted hover:text-text-primary transition-colors"
+              >
+                {showHistorico ? '▲' : '▼'} Histórico
+              </button>
+            )}
+            <span className="text-sm text-success font-medium">✓</span>
+          </div>
+        )}
+      </div>
       
-      {expandido && (
-        <div className="mt-3 space-y-2 pl-4">
+      {/* Histórico de eventos (só para notas pagas e quando expandido) */}
+      {status === 'paga' && showHistorico && temHistorico && (
+        <div className="mt-3 pl-13 space-y-1">
           {cobrancas.map((cob) => (
             <p key={cob.id} className="text-xs text-text-muted">
               Lembrete enviado · {formatEventTime(cob.enviado_em)}
             </p>
           ))}
-          {eventos.map((ev) => (
-            <p key={ev.id} className="text-xs text-text-muted">
-              {labels[ev.tipo] || ev.tipo} · {formatEventTime(ev.created_at)}
-            </p>
-          ))}
+          {eventos.map((ev) => {
+            const labels: Record<string, string> = {
+              link_aberto: 'Abriu o link',
+              pix_copiado: 'Copiou o Pix',
+              marcou_pago: 'Marcado como pago',
+              desfez_pago: 'Pagamento desfeito',
+            }
+            return (
+              <p key={ev.id} className="text-xs text-text-muted">
+                {labels[ev.tipo] || ev.tipo} · {formatEventTime(ev.created_at)}
+              </p>
+            )
+          })}
         </div>
       )}
     </div>
