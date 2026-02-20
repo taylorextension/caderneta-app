@@ -32,9 +32,35 @@ const inter = localFont({
 })
 
 export const metadata: Metadata = {
-  title: 'Caderneta',
-  description: 'Organize seu fiado digital',
+  title: 'Caderneta - Fiado Digital',
+  description: 'Organize seu fiado digital. Controle vendas a prazo, envie lembretes via WhatsApp e receba por Pix.',
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
+  openGraph: {
+    title: 'Caderneta - Fiado Digital',
+    description: 'Organize seu fiado digital. Controle vendas a prazo, envie lembretes via WhatsApp e receba por Pix.',
+    images: [
+      {
+        url: '/icon-512x512.png',
+        width: 512,
+        height: 512,
+        alt: 'Caderneta - Fiado Digital',
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Caderneta - Fiado Digital',
+    description: 'Organize seu fiado digital. Controle vendas a prazo, envie lembretes via WhatsApp e receba por Pix.',
+    images: ['/icon-512x512.png'],
+  },
 }
 
 export const viewport: Viewport = {
