@@ -492,6 +492,7 @@ function NotaItem({ nota, cliente, status, eventos, cobrancas, onCobrar, onPago 
 
   return (
     <div className="p-4">
+      {/* Linha principal: Avatar, Info e Ação */}
       <div className="flex items-center gap-3">
         {/* Avatar */}
         <div className="h-10 w-10 rounded-full bg-black text-white flex items-center justify-center text-sm font-medium shrink-0">
@@ -508,52 +509,52 @@ function NotaItem({ nota, cliente, status, eventos, cobrancas, onCobrar, onPago 
           </p>
         </div>
 
-        {/* Ações */}
+        {/* Ação lateral */}
         {status !== 'paga' ? (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onCobrar}
-              className="text-sm font-medium text-text-primary hover:text-black transition-colors"
-            >
-              Cobrar →
-            </button>
-          </div>
+          <button
+            onClick={onCobrar}
+            className="text-sm font-medium text-text-primary hover:text-black transition-colors"
+          >
+            Cobrar →
+          </button>
         ) : (
-          <div className="flex items-center gap-2">
-            {temHistorico && (
-              <button
-                onClick={() => setShowHistorico(!showHistorico)}
-                className="text-xs text-text-muted hover:text-text-primary transition-colors"
-              >
-                {showHistorico ? '▲' : '▼'} Histórico
-              </button>
-            )}
-            <span className="text-sm text-success font-medium">✓</span>
-          </div>
+          <span className="text-sm text-success font-medium">✓</span>
         )}
       </div>
       
-      {/* Histórico de eventos (só para notas pagas e quando expandido) */}
-      {status === 'paga' && showHistorico && temHistorico && (
-        <div className="mt-3 pl-13 space-y-1">
-          {cobrancas.map((cob) => (
-            <p key={cob.id} className="text-xs text-text-muted">
-              Lembrete enviado · {formatEventTime(cob.enviado_em)}
-            </p>
-          ))}
-          {eventos.map((ev) => {
-            const labels: Record<string, string> = {
-              link_aberto: 'Abriu o link',
-              pix_copiado: 'Copiou o Pix',
-              marcou_pago: 'Marcado como pago',
-              desfez_pago: 'Pagamento desfeito',
-            }
-            return (
-              <p key={ev.id} className="text-xs text-text-muted">
-                {labels[ev.tipo] || ev.tipo} · {formatEventTime(ev.created_at)}
-              </p>
-            )
-          })}
+      {/* Histórico de eventos - ABAIXO do valor (para todas as notas) */}
+      {temHistorico && (
+        <div className="mt-2 pl-13">
+          <button
+            onClick={() => setShowHistorico(!showHistorico)}
+            className="text-xs text-text-muted hover:text-text-primary transition-colors flex items-center gap-1"
+          >
+            <span>{showHistorico ? '▲' : '▼'}</span>
+            Histórico ({eventos.length + cobrancas.length})
+          </button>
+          
+          {showHistorico && (
+            <div className="mt-2 space-y-1">
+              {cobrancas.map((cob) => (
+                <p key={cob.id} className="text-xs text-text-muted">
+                  Lembrete enviado · {formatEventTime(cob.enviado_em)}
+                </p>
+              ))}
+              {eventos.map((ev) => {
+                const labels: Record<string, string> = {
+                  link_aberto: 'Abriu o link',
+                  pix_copiado: 'Copiou o Pix',
+                  marcou_pago: 'Marcado como pago',
+                  desfez_pago: 'Pagamento desfeito',
+                }
+                return (
+                  <p key={ev.id} className="text-xs text-text-muted">
+                    {labels[ev.tipo] || ev.tipo} · {formatEventTime(ev.created_at)}
+                  </p>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
