@@ -40,7 +40,7 @@ TOM: ${tom}
 REGRAS:
 - Use linguagem simples e direta
 - Máximo 2 emojis
-- Destaque o total em *negrito* (use asteriscos)
+- Destaque o valor em negrito usando APENAS UM asterisco de cada lado: *R$XXX,XX* (NÃO use dois asteriscos **)
 - NÃO use: dívida, débito, inadimplente, pendência
 - USE: continha, compra, acertar, lembrar
 - Ofereça Pix como forma de pagamento
