@@ -73,19 +73,27 @@ export default function PublicPage() {
 
       // Generate Pix
       if (notaData.profiles?.pix_chave) {
+        // Validações para garantir dados válidos no Pix
+        const chavePix = notaData.profiles.pix_chave.trim()
+        const nomeRecebedor = (notaData.profiles.pix_nome || notaData.profiles.nome_loja || 'LOJISTA').trim().substring(0, 25)
+        const cidadeRecebedor = (notaData.profiles.pix_cidade || 'SAO PAULO').trim().substring(0, 15)
+        
+        console.log('Gerando Pix:', { chave: chavePix, nome: nomeRecebedor, cidade: cidadeRecebedor, valor: notaData.valor })
+
         const code = gerarBRCode({
-          chave: notaData.profiles.pix_chave,
-          nome: notaData.profiles.pix_nome || 'LOJISTA',
-          cidade: notaData.profiles.pix_cidade || 'SAO PAULO',
+          chave: chavePix,
+          nome: nomeRecebedor,
+          cidade: cidadeRecebedor,
           valor: Number(notaData.valor),
           txid: id.substring(0, 25),
         })
         setBrCode(code)
+        console.log('BRCode gerado:', code)
 
         const qr = await gerarQRDataURL({
-          chave: notaData.profiles.pix_chave,
-          nome: notaData.profiles.pix_nome || 'LOJISTA',
-          cidade: notaData.profiles.pix_cidade || 'SAO PAULO',
+          chave: chavePix,
+          nome: nomeRecebedor,
+          cidade: cidadeRecebedor,
           valor: Number(notaData.valor),
           txid: id.substring(0, 25),
         })
@@ -223,11 +231,18 @@ export default function PublicPage() {
                 >
                   {copied ? 'Copiado ✓' : 'Copiar código Pix'}
                 </Button>
+                
+                <p className="text-xs text-text-muted text-center mt-3">
+                  Se o QR Code não funcionar, use a chave: {nota.profiles.pix_chave}
+                </p>
               </>
             ) : (
-              <div className="mt-6 text-center">
-                <p className="text-sm text-text-muted">
-                  Pix não configurado pelo lojista
+              <div className="mt-6 text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800 font-medium">
+                  ⚠️ Pix não configurado
+                </p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  O lojista ainda não configurou a chave Pix. Entre em contato com ele.
                 </p>
               </div>
             )}
