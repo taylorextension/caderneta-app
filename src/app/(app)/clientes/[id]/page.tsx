@@ -509,14 +509,22 @@ function NotaItem({ nota, cliente, status, eventos, cobrancas, onCobrar, onPago 
           </p>
         </div>
 
-        {/* Ação lateral */}
+        {/* Ações laterais */}
         {status !== 'paga' ? (
-          <button
-            onClick={onCobrar}
-            className="text-sm font-medium text-text-primary hover:text-black transition-colors"
-          >
-            Cobrar →
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onCobrar}
+              className="text-sm font-medium text-text-primary hover:text-black transition-colors"
+            >
+              Cobrar →
+            </button>
+            <button
+              onClick={onPago}
+              className="text-xs px-2 py-1 rounded-full border border-success text-success hover:bg-success hover:text-white transition-colors"
+            >
+              Pago ✓
+            </button>
+          </div>
         ) : (
           <span className="text-sm text-success font-medium">✓</span>
         )}
@@ -535,24 +543,40 @@ function NotaItem({ nota, cliente, status, eventos, cobrancas, onCobrar, onPago 
           
           {showHistorico && (
             <div className="mt-2 space-y-1">
-              {cobrancas.map((cob) => (
-                <p key={cob.id} className="text-xs text-text-muted">
-                  Lembrete enviado · {formatEventTime(cob.enviado_em)}
-                </p>
-              ))}
-              {eventos.map((ev) => {
-                const labels: Record<string, string> = {
-                  link_aberto: 'Abriu o link',
-                  pix_copiado: 'Copiou o Pix',
-                  marcou_pago: 'Marcado como pago',
-                  desfez_pago: 'Pagamento desfeito',
-                }
-                return (
+              {(() => {
+                // Junta todos os eventos em um array com tipo e data
+                const todosEventos = [
+                  ...cobrancas.map(c => ({
+                    tipo: 'cobranca' as const,
+                    data: c.enviado_em,
+                    texto: 'Lembrete enviado',
+                    id: c.id
+                  })),
+                  ...eventos.map(e => {
+                    const labels: Record<string, string> = {
+                      link_aberto: 'Abriu o link',
+                      pix_copiado: 'Copiou o Pix',
+                      marcou_pago: 'Marcado como pago',
+                      desfez_pago: 'Pagamento desfeito',
+                    }
+                    return {
+                      tipo: 'evento' as const,
+                      data: e.created_at,
+                      texto: labels[e.tipo] || e.tipo,
+                      id: e.id
+                    }
+                  })
+                ]
+                
+                // Ordena do mais recente para o mais antigo
+                todosEventos.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+                
+                return todosEventos.map((ev) => (
                   <p key={ev.id} className="text-xs text-text-muted">
-                    {labels[ev.tipo] || ev.tipo} · {formatEventTime(ev.created_at)}
+                    {ev.texto} · {formatEventTime(ev.data)}
                   </p>
-                )
-              })}
+                ))
+              })()}
             </div>
           )}
         </div>
