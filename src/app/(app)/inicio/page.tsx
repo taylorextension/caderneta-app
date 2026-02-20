@@ -26,49 +26,6 @@ export default function InicioPage() {
   const [cobrarNotas, setCobrarNotas] = useState<NotaComCliente[]>([])
   const [showWizard, setShowWizard] = useState(false)
 
-  const handleMarcarPago = useCallback(async (nota: NotaComCliente) => {
-    if (!profile) return
-    try {
-      const supabase = createClient()
-      await supabase
-        .from('notas')
-        .update({ status: 'pago', data_pagamento: new Date().toISOString() })
-        .eq('id', nota.id)
-      
-      await supabase.from('eventos').insert({
-        nota_id: nota.id,
-        cliente_id: nota.cliente_id,
-        user_id: profile.id,
-        tipo: 'marcou_pago',
-      })
-      
-      addToast({
-        message: 'Pagamento registrado!',
-        type: 'success',
-        action: {
-          label: 'Desfazer',
-          onClick: async () => {
-            await supabase
-              .from('notas')
-              .update({ status: 'pendente', data_pagamento: null })
-              .eq('id', nota.id)
-            await supabase.from('eventos').insert({
-              nota_id: nota.id,
-              cliente_id: nota.cliente_id,
-              user_id: profile.id,
-              tipo: 'desfez_pago',
-            })
-            fetchData()
-          },
-        },
-      })
-      
-      fetchData()
-    } catch {
-      addToast({ message: 'Erro ao atualizar', type: 'error' })
-    }
-  }, [profile, addToast, fetchData])
-
   const fetchData = useCallback(async () => {
     if (!profile) return
     try {
@@ -269,6 +226,49 @@ export default function InicioPage() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  const handleMarcarPago = useCallback(async (nota: NotaComCliente) => {
+    if (!profile) return
+    try {
+      const supabase = createClient()
+      await supabase
+        .from('notas')
+        .update({ status: 'pago', data_pagamento: new Date().toISOString() })
+        .eq('id', nota.id)
+      
+      await supabase.from('eventos').insert({
+        nota_id: nota.id,
+        cliente_id: nota.cliente_id,
+        user_id: profile.id,
+        tipo: 'marcou_pago',
+      })
+      
+      addToast({
+        message: 'Pagamento registrado!',
+        type: 'success',
+        action: {
+          label: 'Desfazer',
+          onClick: async () => {
+            await supabase
+              .from('notas')
+              .update({ status: 'pendente', data_pagamento: null })
+              .eq('id', nota.id)
+            await supabase.from('eventos').insert({
+              nota_id: nota.id,
+              cliente_id: nota.cliente_id,
+              user_id: profile.id,
+              tipo: 'desfez_pago',
+            })
+            fetchData()
+          },
+        },
+      })
+      
+      fetchData()
+    } catch {
+      addToast({ message: 'Erro ao atualizar', type: 'error' })
+    }
+  }, [profile, addToast, fetchData])
 
   if (loading) {
     return (
