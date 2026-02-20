@@ -201,6 +201,7 @@ export default function ClienteDetailPage() {
       data_vencimento: nota.data_vencimento || '',
       itens: nota.itens,
       descricao: nota.descricao,
+      status: nota.status,
       vezes_cobrado: nota.vezes_cobrado,
       cliente_id: id,
       cliente_nome: cliente?.nome || '',
