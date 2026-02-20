@@ -107,7 +107,7 @@ export function NotaCard({
 
   return (
     <>
-      <div className="bg-white p-4">
+      <div className="bg-white">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 flex-1">
             {/* Avatar */}
