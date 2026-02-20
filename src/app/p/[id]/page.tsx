@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { gerarBRCode, gerarQRDataURL } from '@/lib/pix'
+import { gerarBRCode, gerarQRDataURL, validarBRCode } from '@/lib/pix'
 import { formatCurrencyShort } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -75,29 +75,41 @@ export default function PublicPage() {
       if (notaData.profiles?.pix_chave) {
         // Validações para garantir dados válidos no Pix
         const chavePix = notaData.profiles.pix_chave.trim()
-        const nomeRecebedor = (notaData.profiles.pix_nome || notaData.profiles.nome_loja || 'LOJISTA').trim().substring(0, 25)
-        const cidadeRecebedor = (notaData.profiles.pix_cidade || 'SAO PAULO').trim().substring(0, 15)
+        const nomeRecebedor = (notaData.profiles.pix_nome || notaData.profiles.nome_loja || 'LOJISTA').trim()
+        const cidadeRecebedor = (notaData.profiles.pix_cidade || 'SAO PAULO').trim()
         
-        console.log('Gerando Pix:', { chave: chavePix, nome: nomeRecebedor, cidade: cidadeRecebedor, valor: notaData.valor })
-
-        const code = gerarBRCode({
-          chave: chavePix,
-          nome: nomeRecebedor,
-          cidade: cidadeRecebedor,
-          valor: Number(notaData.valor),
-          txid: id.substring(0, 25),
+        console.log('Gerando Pix:', { 
+          chave: chavePix, 
+          nome: nomeRecebedor, 
+          cidade: cidadeRecebedor, 
+          valor: notaData.valor 
         })
-        setBrCode(code)
-        console.log('BRCode gerado:', code)
 
-        const qr = await gerarQRDataURL({
-          chave: chavePix,
-          nome: nomeRecebedor,
-          cidade: cidadeRecebedor,
-          valor: Number(notaData.valor),
-          txid: id.substring(0, 25),
-        })
-        setQrUrl(qr)
+        try {
+          const code = gerarBRCode({
+            chave: chavePix,
+            nome: nomeRecebedor,
+            cidade: cidadeRecebedor,
+            valor: Number(notaData.valor) > 0 ? Number(notaData.valor) : undefined,
+            txid: id.substring(0, 25),
+          })
+          
+          console.log('BRCode gerado:', code)
+          console.log('BRCode válido?', validarBRCode(code))
+          
+          setBrCode(code)
+
+          const qr = await gerarQRDataURL({
+            chave: chavePix,
+            nome: nomeRecebedor,
+            cidade: cidadeRecebedor,
+            valor: Number(notaData.valor) > 0 ? Number(notaData.valor) : undefined,
+            txid: id.substring(0, 25),
+          })
+          setQrUrl(qr)
+        } catch (pixError) {
+          console.error('Erro ao gerar Pix:', pixError)
+        }
       }
 
       return () => window.removeEventListener('beforeunload', handleUnload)
