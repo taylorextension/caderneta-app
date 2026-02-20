@@ -410,7 +410,8 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
             >
               <h2 className="text-lg font-semibold mb-4">Quando vence?</h2>
 
-              <div className="space-y-2 mb-5">
+              {/* Pílulas de prazo */}
+              <div className="flex flex-wrap gap-2 mb-4">
                 {[
                   { label: '7 dias', days: 7 },
                   { label: '15 dias', days: 15 },
@@ -423,46 +424,35 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                     <button
                       key={opt.days}
                       onClick={() => selectVencimento(opt.days)}
-                      className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${
+                      className={`flex-1 min-w-[80px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
                         selected
                           ? 'bg-black text-white border-black'
-                          : 'bg-white text-text-primary border-border'
+                          : 'bg-white text-text-primary border-gray-300'
                       }`}
                     >
-                      <p className="text-sm font-semibold">{opt.label}</p>
-                      <p
-                        className={`text-xs mt-0.5 ${
-                          selected ? 'text-white/80' : 'text-text-secondary'
-                        }`}
-                      >
-                        Vence em {formatDueDate(optStr)}
-                      </p>
+                      {opt.label}
                     </button>
                   )
                 })}
+              </div>
 
-                {/* Data específica como pílula */}
+              {/* Data específica e À vista */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {/* Data específica */}
                 <button
                   onClick={() => {
                     setShowCustomDate(true)
                     vencimentoInputRef.current?.showPicker()
                   }}
-                  className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${
+                  className={`flex-1 min-w-[120px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
                     showCustomDate
                       ? 'bg-black text-white border-black'
-                      : 'bg-white text-text-primary border-border'
+                      : 'bg-white text-text-primary border-gray-300'
                   }`}
                 >
-                  <p className="text-sm font-semibold">Data específica</p>
-                  <p
-                    className={`text-xs mt-0.5 ${
-                      showCustomDate ? 'text-white/80' : 'text-text-secondary'
-                    }`}
-                  >
-                    {showCustomDate && vencimentoCustom
-                      ? formatDueDate(vencimentoCustom)
-                      : 'Escolher outra data'}
-                  </p>
+                  {showCustomDate && vencimentoCustom
+                    ? formatDueDate(vencimentoCustom)
+                    : 'Data específica'}
                   <input
                     ref={vencimentoInputRef}
                     type="date"
@@ -478,29 +468,26 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                   />
                 </button>
 
-                {/* À vista (Sem prazo) como pílula */}
+                {/* À vista */}
                 <button
                   onClick={() => selectVencimento(null)}
-                  className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${
+                  className={`flex-1 min-w-[100px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
                     !vencimento && !showCustomDate
                       ? 'bg-black text-white border-black'
-                      : 'bg-white text-text-primary border-border'
+                      : 'bg-white text-text-primary border-gray-300'
                   }`}
                 >
-                  <p className="text-sm font-semibold">À vista</p>
-                  <p
-                    className={`text-xs mt-0.5 ${
-                      !vencimento && !showCustomDate ? 'text-white/80' : 'text-text-secondary'
-                    }`}
-                  >
-                    Pago na hora · Nota marcada como quitada
-                  </p>
+                  À vista
                 </button>
               </div>
 
               {vencimento ? (
                 <p className="text-xs text-text-secondary mb-4">
-                  Vencimento selecionado: {formatDueDate(vencimento)}
+                  Vencimento: {formatDueDate(vencimento)}
+                </p>
+              ) : showCustomDate && vencimentoCustom ? (
+                <p className="text-xs text-text-secondary mb-4">
+                  Vencimento: {formatDueDate(vencimentoCustom)}
                 </p>
               ) : (
                 <p className="text-xs text-text-secondary mb-4">
