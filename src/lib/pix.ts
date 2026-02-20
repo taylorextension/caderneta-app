@@ -1,4 +1,5 @@
 import QRCode from 'qrcode'
+import * as PIX from 'pixbr'
 
 interface PixParams {
   chave: string
@@ -8,73 +9,52 @@ interface PixParams {
   txid?: string
 }
 
-function tlv(id: string, value: string): string {
-  const len = value.length.toString().padStart(2, '0')
-  return `${id}${len}${value}`
-}
-
-function crc16(str: string): string {
-  let crc = 0xffff
-  for (let i = 0; i < str.length; i++) {
-    crc ^= str.charCodeAt(i) << 8
-    for (let j = 0; j < 8; j++) {
-      if (crc & 0x8000) {
-        crc = (crc << 1) ^ 0x1021
-      } else {
-        crc = crc << 1
-      }
-      crc &= 0xffff
-    }
-  }
-  return crc.toString(16).toUpperCase().padStart(4, '0')
-}
-
 export function gerarBRCode(p: PixParams): string {
-  const gui = tlv('00', 'br.gov.bcb.pix')
-  const chave = tlv('01', p.chave)
-  const mai = tlv('26', gui + chave)
-
-  let payload = ''
-  payload += tlv('00', '01') // format indicator
-  payload += mai
-  payload += tlv('52', '0000') // merchant category
-  payload += tlv('53', '986') // BRL
+  // Cria mensagem estática Pix
+  const msg = new PIX.Messages.Static(p.chave, p.nome.toUpperCase(), p.cidade.toUpperCase())
+  
+  // Adiciona valor se existir
   if (p.valor && p.valor > 0) {
-    payload += tlv('54', p.valor.toFixed(2))
+    msg.setField(new PIX.Fields.Transaction_Amount(p.valor))
   }
-  payload += tlv('58', 'BR')
-  payload += tlv(
-    '59',
-    p.nome
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .substring(0, 25)
-  )
-  payload += tlv(
-    '60',
-    p.cidade
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .substring(0, 15)
-  )
-
+  
+  // Adiciona TXID (identificador da transação)
   if (p.txid) {
-    payload += tlv('62', tlv('05', p.txid.substring(0, 25)))
-  } else {
-    payload += tlv('62', tlv('05', '***'))
+    const additionalData = new PIX.Groups.Grp_Additional_Data_Field()
+    additionalData.Children.push(new PIX.Fields.Additional_Data_Field('05', p.txid.substring(0, 25)))
+    msg.setField(additionalData)
   }
-
-  payload += '6304'
-  payload += crc16(payload)
-
-  return payload
+  
+  // Retorna o BRCode válido
+  return msg.getStringValue()
 }
 
 export async function gerarQRDataURL(p: PixParams): Promise<string> {
   const code = gerarBRCode(p)
+  console.log('BRCode gerado:', code)
+  
   return QRCode.toDataURL(code, {
     width: 256,
     margin: 2,
     color: { dark: '#000000', light: '#FFFFFF' },
   })
+}
+
+// Função para validar se o BRCode está correto
+export function validarBRCode(brcode: string): boolean {
+  try {
+    // Verifica se começa com o formato correto (000201)
+    if (!brcode.startsWith('000201')) {
+      return false
+    }
+    
+    // Verifica se tem o CRC16 no final
+    if (!brcode.includes('6304')) {
+      return false
+    }
+    
+    return true
+  } catch {
+    return false
+  }
 }
