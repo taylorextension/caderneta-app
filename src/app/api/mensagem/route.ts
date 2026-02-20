@@ -15,7 +15,9 @@ function buildPrompt(data: MensagemRequest): string {
     })
     .join('\n---\n')
 
-  return `Gere UMA mensagem de lembrete via WhatsApp de ${data.lojista_nome} (${data.nome_loja}) para ${data.cliente_apelido || data.cliente_nome}.
+  const primeiroNome = data.cliente_nome.split(' ')[0]
+
+  return `Gere UMA mensagem de lembrete via WhatsApp de ${data.lojista_nome} (${data.nome_loja}) para ${primeiroNome}.
 
 REGRAS:
 - PROIBIDO usar: dívida, débito, inadimplente, pendência, cobrança
@@ -24,11 +26,12 @@ REGRAS:
 - Máximo 4-5 linhas antes dos itens
 - Calibração de tom: vezes_cobrado=${maxVezesCobrado} (0=amigável, 1-2=casual, 3+=muito compreensivo). Quanto mais atraso, MAIS compreensivo.
 - Liste itens com •
-- Total em *negrito*
+- Total em *negrito* (use asteriscos para negrito no WhatsApp)
 - Inclua uma frase sobre Pix
 - Despedida cordial
 - NÃO inclua link (será adicionado automaticamente)
 - Responda APENAS a mensagem, sem explicações
+- Use o nome "${primeiroNome}" para se referir ao cliente
 
 DADOS:
 ${itensText}

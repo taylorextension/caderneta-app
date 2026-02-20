@@ -191,6 +191,10 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
     try {
       setSaving(true)
       const supabase = createClient()
+      
+      // Se for à vista (sem vencimento), marca como paga
+      const isAVista = !vencimentoCustom && !vencimento
+      
       const { error } = await supabase.from('notas').insert({
         user_id: profile.id,
         cliente_id: selectedCliente.id,
@@ -198,9 +202,13 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
         itens: itens.length > 0 ? itens : [],
         valor: valorNum,
         data_vencimento: vencimentoCustom || vencimento,
+        status: isAVista ? 'paga' : 'pendente',
+        data_pagamento: isAVista ? new Date().toISOString() : null,
       })
       if (error) throw error
-      addToast({ message: 'Venda registrada', type: 'success' })
+      
+      const msg = isAVista ? 'Venda à vista registrada' : 'Venda registrada'
+      addToast({ message: msg, type: 'success' })
       onClose()
     } catch {
       addToast({ message: 'Erro ao salvar venda', type: 'error' })
@@ -432,44 +440,64 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                     </button>
                   )
                 })}
-              </div>
 
-              <div className="grid grid-cols-2 gap-2 mb-4">
+                {/* Data específica como pílula */}
                 <label
-                  className={`relative h-11 rounded-xl border text-sm font-medium transition-colors flex items-center justify-center ${
+                  className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors block cursor-pointer ${
                     showCustomDate
                       ? 'bg-black text-white border-black'
                       : 'bg-white text-text-primary border-border'
                   }`}
                 >
-                  <span>Data específica</span>
-                  <input
-                    ref={vencimentoInputRef}
-                    type="date"
-                    value={vencimentoCustom}
-                    min={toISODateLocal(new Date())}
-                    onClick={() => {
-                      setShowCustomDate(true)
-                    }}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      setShowCustomDate(true)
-                      setVencimentoCustom(value)
-                      setVencimento(value || null)
-                    }}
-                    className="absolute inset-0 opacity-0"
-                  />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold">Data específica</p>
+                      <p
+                        className={`text-xs mt-0.5 ${
+                          showCustomDate ? 'text-white/80' : 'text-text-secondary'
+                        }`}
+                      >
+                        {showCustomDate && vencimentoCustom
+                          ? formatDueDate(vencimentoCustom)
+                          : 'Escolher outra data'}
+                      </p>
+                    </div>
+                    <input
+                      ref={vencimentoInputRef}
+                      type="date"
+                      value={vencimentoCustom}
+                      min={toISODateLocal(new Date())}
+                      onClick={() => {
+                        setShowCustomDate(true)
+                      }}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        setShowCustomDate(true)
+                        setVencimentoCustom(value)
+                        setVencimento(value || null)
+                      }}
+                      className="absolute opacity-0 w-0 h-0"
+                    />
+                  </div>
                 </label>
 
+                {/* À vista (Sem prazo) como pílula */}
                 <button
                   onClick={() => selectVencimento(null)}
-                  className={`h-11 rounded-xl border text-sm font-medium transition-colors ${
+                  className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${
                     !vencimento && !showCustomDate
                       ? 'bg-black text-white border-black'
                       : 'bg-white text-text-primary border-border'
                   }`}
                 >
-                  Sem prazo
+                  <p className="text-sm font-semibold">À vista</p>
+                  <p
+                    className={`text-xs mt-0.5 ${
+                      !vencimento && !showCustomDate ? 'text-white/80' : 'text-text-secondary'
+                    }`}
+                  >
+                    Pago na hora · Nota marcada como quitada
+                  </p>
                 </button>
               </div>
 
@@ -479,7 +507,7 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                 </p>
               ) : (
                 <p className="text-xs text-text-secondary mb-4">
-                  Sem data de vencimento
+                  Pagamento à vista · Nota será marcada como paga
                 </p>
               )}
 
