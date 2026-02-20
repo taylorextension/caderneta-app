@@ -511,7 +511,7 @@ function NotaItem({ nota, cliente, status, eventos, cobrancas, onCobrar, onPago 
 
         {/* Ações laterais */}
         {status !== 'paga' ? (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-end gap-2">
             <button
               onClick={onCobrar}
               className="text-sm font-medium text-text-primary hover:text-black transition-colors"
