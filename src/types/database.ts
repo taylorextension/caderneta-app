@@ -82,6 +82,7 @@ export interface NotaComCliente {
   data_vencimento: string
   itens: ItemNota[]
   descricao: string | null
+  status: 'pendente' | 'pago'
   vezes_cobrado: number
   cliente_id: string
   cliente_nome: string

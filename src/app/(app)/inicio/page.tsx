@@ -51,6 +51,7 @@ export default function InicioPage() {
         data_vencimento: string | null
         itens: unknown
         descricao: string | null
+        status: string
         vezes_cobrado: number | null
         cliente_id: string
       }
@@ -77,7 +78,7 @@ export default function InicioPage() {
       const [pendentesRes, pagosHojeRes, pagosMesRes] = await Promise.all([
         supabase
           .from('notas')
-          .select('id, valor, data_vencimento, itens, descricao, vezes_cobrado, cliente_id')
+          .select('id, valor, data_vencimento, itens, descricao, status, vezes_cobrado, cliente_id')
           .eq('user_id', profile.id)
           .eq('status', 'pendente'),
         supabase
@@ -145,6 +146,7 @@ export default function InicioPage() {
           data_vencimento: nota.data_vencimento,
           itens: itemList,
           descricao: nota.descricao,
+          status: nota.status as 'pendente' | 'pago',
           vezes_cobrado: nota.vezes_cobrado || 0,
           cliente_id: nota.cliente_id,
           cliente_nome: cliente?.nome || 'Cliente',
