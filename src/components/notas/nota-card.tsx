@@ -100,7 +100,6 @@ export function NotaCard({
     addToast({
       message: 'Pagamento registrado!',
       type: 'success',
-      duration: 5000,
     })
   }
 
