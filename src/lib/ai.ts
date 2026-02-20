@@ -28,5 +28,5 @@ function getGoogleAI() {
 
 // Exporta uma função que retorna o modelo em vez do modelo diretamente
 export function geminiFlash() {
-  return getGoogleAI()('gemini-1.5-flash')
+  return getGoogleAI()('gemini-flash-lite-latest')
 }
