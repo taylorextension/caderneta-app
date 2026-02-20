@@ -442,44 +442,41 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                 })}
 
                 {/* Data específica como pílula */}
-                <label
-                  className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors block cursor-pointer ${
+                <button
+                  onClick={() => {
+                    setShowCustomDate(true)
+                    vencimentoInputRef.current?.showPicker()
+                  }}
+                  className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${
                     showCustomDate
                       ? 'bg-black text-white border-black'
                       : 'bg-white text-text-primary border-border'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold">Data específica</p>
-                      <p
-                        className={`text-xs mt-0.5 ${
-                          showCustomDate ? 'text-white/80' : 'text-text-secondary'
-                        }`}
-                      >
-                        {showCustomDate && vencimentoCustom
-                          ? formatDueDate(vencimentoCustom)
-                          : 'Escolher outra data'}
-                      </p>
-                    </div>
-                    <input
-                      ref={vencimentoInputRef}
-                      type="date"
-                      value={vencimentoCustom}
-                      min={toISODateLocal(new Date())}
-                      onClick={() => {
-                        setShowCustomDate(true)
-                      }}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        setShowCustomDate(true)
-                        setVencimentoCustom(value)
-                        setVencimento(value || null)
-                      }}
-                      className="absolute opacity-0 w-0 h-0"
-                    />
-                  </div>
-                </label>
+                  <p className="text-sm font-semibold">Data específica</p>
+                  <p
+                    className={`text-xs mt-0.5 ${
+                      showCustomDate ? 'text-white/80' : 'text-text-secondary'
+                    }`}
+                  >
+                    {showCustomDate && vencimentoCustom
+                      ? formatDueDate(vencimentoCustom)
+                      : 'Escolher outra data'}
+                  </p>
+                  <input
+                    ref={vencimentoInputRef}
+                    type="date"
+                    value={vencimentoCustom}
+                    min={toISODateLocal(new Date())}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setShowCustomDate(true)
+                      setVencimentoCustom(value)
+                      setVencimento(value || null)
+                    }}
+                    className="absolute opacity-0 w-0 h-0"
+                  />
+                </button>
 
                 {/* À vista (Sem prazo) como pílula */}
                 <button
