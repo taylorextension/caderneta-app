@@ -11,6 +11,8 @@ import { NotaCard } from '@/components/inicio/nota-card'
 import { CobrarSheet } from '@/components/cobrancas/cobrar-sheet'
 import { WizardVenda } from '@/components/vendas/wizard-venda'
 import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Modal } from '@/components/ui/modal'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatCurrencyShort } from '@/lib/format'
@@ -21,9 +23,11 @@ export default function InicioPage() {
   const profile = useAuthStore((s) => s.profile)
   const addToast = useUIStore((s) => s.addToast)
   const [data, setData] = useState<InicioData | null>(null)
+  const [ultimasAcoes, setUltimasAcoes] = useState<Map<string, { tipo: string; created_at: string }>>(new Map())
   const [loading, setLoading] = useState(true)
   const [cobrarNotas, setCobrarNotas] = useState<NotaComCliente[]>([])
   const [showWizard, setShowWizard] = useState(false)
+  const [confirmPago, setConfirmPago] = useState<NotaComCliente | null>(null)
 
   const fetchData = useCallback(async () => {
     if (!profile) return
@@ -179,6 +183,41 @@ export default function InicioPage() {
         vencendo,
         recebidos_hoje: recebidosHoje,
       })
+
+      // Buscar últimas ações (cobranças e eventos) para as notas pendentes
+      const notaIds = [...vencidas, ...vencendo].map(n => n.id)
+      if (notaIds.length > 0) {
+        const { data: cobrancasData } = await supabase
+          .from('cobrancas')
+          .select('nota_id, enviado_em')
+          .in('nota_id', notaIds)
+          .order('enviado_em', { ascending: false })
+
+        const { data: eventosData } = await supabase
+          .from('eventos')
+          .select('nota_id, tipo, created_at')
+          .in('nota_id', notaIds)
+          .order('created_at', { ascending: false })
+
+        const acoesMap = new Map<string, { tipo: string; created_at: string }>()
+
+        // Adiciona cobranças ao map
+        cobrancasData?.forEach((c: any) => {
+          if (!acoesMap.has(c.nota_id)) {
+            acoesMap.set(c.nota_id, { tipo: 'lembrete_enviado', created_at: c.enviado_em })
+          }
+        })
+
+        // Adiciona eventos ao map (só se for mais recente que a cobrança)
+        eventosData?.forEach((e: any) => {
+          const existing = acoesMap.get(e.nota_id)
+          if (!existing || new Date(e.created_at) > new Date(existing.created_at)) {
+            acoesMap.set(e.nota_id, { tipo: e.tipo, created_at: e.created_at })
+          }
+        })
+
+        setUltimasAcoes(acoesMap)
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao carregar dados'
       addToast({ message, type: 'error' })
@@ -251,6 +290,8 @@ export default function InicioPage() {
                       nota={nota}
                       variant="vencida"
                       onCobrar={(n) => setCobrarNotas([n])}
+                      onMarcarPago={(n) => setConfirmPago(n)}
+                      ultimaAcao={ultimasAcoes.get(nota.id)}
                     />
                   ))}
                 </Card>
@@ -272,6 +313,8 @@ export default function InicioPage() {
                       nota={nota}
                       variant="vencendo"
                       onCobrar={(n) => setCobrarNotas([n])}
+                      onMarcarPago={(n) => setConfirmPago(n)}
+                      ultimaAcao={ultimasAcoes.get(nota.id)}
                     />
                   ))}
                 </Card>
@@ -309,6 +352,44 @@ export default function InicioPage() {
         onClose={() => setCobrarNotas([])}
         notas={cobrarNotas}
       />
+
+      <Modal open={!!confirmPago} onClose={() => setConfirmPago(null)}>
+        <h3 className="text-lg font-semibold mb-2">Confirmar pagamento</h3>
+        <p className="text-sm text-text-secondary mb-6">
+          Marcar {confirmPago ? formatCurrencyShort(Number(confirmPago.valor)) : ''} como pago?
+        </p>
+        <div className="flex gap-3">
+          <Button variant="secondary" className="flex-1" onClick={() => setConfirmPago(null)}>
+            Cancelar
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={async () => {
+              if (!confirmPago || !profile) return
+              try {
+                const supabase = createClient()
+                await supabase
+                  .from('notas')
+                  .update({ status: 'pago', data_pagamento: new Date().toISOString() })
+                  .eq('id', confirmPago.id)
+                await supabase.from('eventos').insert({
+                  nota_id: confirmPago.id,
+                  cliente_id: confirmPago.cliente_id,
+                  user_id: profile.id,
+                  tipo: 'marcou_pago',
+                })
+                addToast({ message: 'Marcado como pago', type: 'success' })
+                setConfirmPago(null)
+                fetchData()
+              } catch {
+                addToast({ message: 'Erro ao atualizar', type: 'error' })
+              }
+            }}
+          >
+            Confirmar
+          </Button>
+        </div>
+      </Modal>
 
       {showWizard && (
         <WizardVenda
