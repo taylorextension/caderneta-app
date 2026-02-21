@@ -1,6 +1,7 @@
 'use client'
 
-import { type ReactNode, useEffect, useRef } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useDragControls } from 'motion/react'
 
 interface BottomSheetProps {
@@ -12,6 +13,12 @@ interface BottomSheetProps {
 export function BottomSheet({ open, onClose, children }: BottomSheetProps) {
   const dragControls = useDragControls()
   const sheetRef = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
 
   useEffect(() => {
     if (open) {
@@ -24,10 +31,12 @@ export function BottomSheet({ open, onClose, children }: BottomSheetProps) {
     }
   }, [open])
 
-  return (
+  if (!mounted) return null
+
+  return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[200]">
+        <div className="fixed inset-0 z-[300]">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -60,6 +69,7 @@ export function BottomSheet({ open, onClose, children }: BottomSheetProps) {
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
