@@ -40,7 +40,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-divider">
-      <div className="flex items-center h-[72px] pb-safe">
+      <div className="flex items-center h-[72px]">
         {items.map((item) => {
           const active = pathname.startsWith(item.href)
           const Icon = active ? item.activeIcon : item.icon
