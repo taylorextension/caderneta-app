@@ -4,6 +4,12 @@ import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/stores/ui-store'
 
+interface Evento {
+  id: string
+  tipo: string
+  created_at: string
+}
+
 interface NotaCardProps {
   nota: {
     id: string
@@ -20,10 +26,7 @@ interface NotaCardProps {
     apelido?: string | null
     telefone?: string | null
   }
-  ultimaAcao?: {
-    tipo: 'lembrete_enviado' | 'link_aberto' | 'pix_copiado' | string
-    created_at: string
-  } | null
+  eventos?: Evento[]
   showAvatar?: boolean
   onCobrar: () => void
   onMarcarPago: () => void
@@ -32,12 +35,13 @@ interface NotaCardProps {
 export function NotaCard({
   nota,
   cliente,
-  ultimaAcao,
+  eventos = [],
   showAvatar = true,
   onCobrar,
   onMarcarPago,
 }: NotaCardProps) {
   const [showConfirm, setShowConfirm] = useState(false)
+  const [showHistorico, setShowHistorico] = useState(false)
   const addToast = useUIStore((s) => s.addToast)
 
   const hoje = new Date()
@@ -66,6 +70,8 @@ export function NotaCard({
       lembrete_enviado: '📤',
       link_aberto: '👀',
       pix_copiado: '📋',
+      marcou_pago: '✓',
+      desfez_pago: '↩',
     }
     return icons[tipo] || '📌'
   }
@@ -75,24 +81,31 @@ export function NotaCard({
       lembrete_enviado: 'Lembrete enviado',
       link_aberto: 'Abriu o link',
       pix_copiado: 'Copiou o Pix',
+      marcou_pago: 'Marcado como pago',
+      desfez_pago: 'Pagamento desfeito',
     }
     return labels[tipo] || tipo
   }
 
-  const formatAcaoTime = (dateStr: string) => {
-    const date = new Date(dateStr)
-    const hoje = new Date()
-    const ontem = new Date(hoje)
-    ontem.setDate(ontem.getDate() - 1)
-    
-    if (date.toDateString() === hoje.toDateString()) {
-      return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    }
-    if (date.toDateString() === ontem.toDateString()) {
-      return 'Ontem'
-    }
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+  const formatEventoHora = (dateStr: string) => {
+    return new Date(dateStr).toLocaleTimeString('pt-BR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    })
   }
+
+  // Agrupa eventos por dia
+  const eventosPorDia = eventos.reduce((acc, evento) => {
+    const data = evento.created_at.split('T')[0]
+    if (!acc[data]) acc[data] = []
+    acc[data].push(evento)
+    return acc
+  }, {} as Record<string, Evento[]>)
+
+  // Ordena dias (mais recente primeiro)
+  const diasOrdenados = Object.keys(eventosPorDia).sort((a, b) => 
+    new Date(b).getTime() - new Date(a).getTime()
+  )
 
   const handleConfirmarPago = () => {
     onMarcarPago()
@@ -125,15 +138,7 @@ export function NotaCard({
           {formatCurrencyShort(Number(nota.valor))} · {getStatusText()}
         </p>
 
-        {/* Linha 3: Última ação (só se existir) */}
-        {ultimaAcao && (
-          <p className="text-xs text-[#6B7280] mt-2 flex items-center gap-1">
-            <span>{getAcaoIcon(ultimaAcao.tipo)}</span>
-            <span>{getAcaoText(ultimaAcao.tipo)} · {formatAcaoTime(ultimaAcao.created_at)}</span>
-          </p>
-        )}
-
-        {/* Linha 4: Botões lado a lado */}
+        {/* Linha 3: Botões lado a lado */}
         {nota.status !== 'pago' && (
           <div className="flex gap-2 mt-3">
             <button
@@ -148,6 +153,40 @@ export function NotaCard({
             >
               Cobrar →
             </button>
+          </div>
+        )}
+
+        {/* Linha 4: Toggle histórico */}
+        {eventos.length > 0 && (
+          <button
+            onClick={() => setShowHistorico(!showHistorico)}
+            className="text-xs text-[#6B7280] mt-3 flex items-center gap-1 hover:text-[#02090A] transition-colors"
+          >
+            <span>{showHistorico ? '▲' : '▼'}</span>
+            Histórico ({eventos.length})
+          </button>
+        )}
+
+        {/* Histórico expandido */}
+        {showHistorico && eventos.length > 0 && (
+          <div className="mt-3 space-y-3">
+            {diasOrdenados.map((dia) => (
+              <div key={dia}>
+                <p className="text-xs text-[#9CA3AF] mb-1">
+                  {formatRelativeDate(dia)}
+                </p>
+                <div className="space-y-1">
+                  {eventosPorDia[dia]
+                    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                    .map((evento) => (
+                      <p key={evento.id} className="text-xs text-[#6B7280] flex items-center gap-1">
+                        <span>{getAcaoIcon(evento.tipo)}</span>
+                        <span>{getAcaoText(evento.tipo)} · {formatEventoHora(evento.created_at)}</span>
+                      </p>
+                    ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
