@@ -56,18 +56,29 @@ export default function ClienteDetailPage() {
       if (clienteError) throw clienteError
       setCliente(clienteData)
 
-      // Buscar notas pendentes com TODOS os eventos
+      // Buscar notas pendentes com última ação
       const { data: pendentesData } = await supabase
         .from('notas')
         .select(`
           *,
-          eventos:eventos(id, tipo, created_at)
+          eventos:eventos(tipo, created_at)
         `)
         .eq('cliente_id', id)
         .eq('status', 'pendente')
         .order('data_vencimento', { ascending: true })
 
-      setPendentes(pendentesData || [])
+      // Processar pendentes - extrair só a última ação
+      const pendentesComAcao = (pendentesData || []).map((nota: any) => {
+        const eventos = nota.eventos || []
+        const ultimaAcao = eventos.length > 0
+          ? eventos.sort((a: any, b: any) => 
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )[0]
+          : null
+        return { ...nota, ultimaAcao }
+      })
+
+      setPendentes(pendentesComAcao)
 
       // Buscar notas pagas (sem eventos)
       const { data: pagasData } = await supabase
@@ -254,7 +265,7 @@ export default function ClienteDetailPage() {
                     apelido: cliente.apelido,
                     telefone: cliente.telefone,
                   }}
-                  eventos={nota.eventos || []}
+                  ultimaAcao={nota.ultimaAcao}
                   showAvatar={false}
                   onCobrar={() => setCobrarNotas([notaToComCliente(nota)])}
                   onMarcarPago={() => handleMarcarPago(nota)}
