@@ -255,7 +255,10 @@ export default function ClienteDetailPage() {
               {pendentes.map((nota) => (
                 <NotaCard
                   key={nota.id}
-                  nota={nota}
+                  nota={{
+                    ...nota,
+                    status: nota.status as 'pendente' | 'pago',
+                  }}
                   cliente={{
                     id: cliente.id,
                     nome: cliente.nome,
