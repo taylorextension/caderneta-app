@@ -126,7 +126,8 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
           <textarea
             value={mensagem}
             onChange={(e) => setMensagem(e.target.value)}
-            className="w-full min-h-[200px] p-3 bg-transparent border border-border rounded-none text-sm text-text-primary outline-none focus:border-black resize-none"
+            aria-label="Mensagem de cobrança"
+            className="w-full min-h-[200px] bg-transparent p-0 border-0 rounded-none text-sm leading-7 text-text-primary outline-none resize-none appearance-none"
           />
         )}
       </div>
