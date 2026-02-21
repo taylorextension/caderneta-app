@@ -56,29 +56,18 @@ export default function ClienteDetailPage() {
       if (clienteError) throw clienteError
       setCliente(clienteData)
 
-      // Buscar notas pendentes com última ação
+      // Buscar notas pendentes com TODOS os eventos
       const { data: pendentesData } = await supabase
         .from('notas')
         .select(`
           *,
-          eventos:eventos(tipo, created_at)
+          eventos:eventos(id, tipo, created_at)
         `)
         .eq('cliente_id', id)
         .eq('status', 'pendente')
         .order('data_vencimento', { ascending: true })
 
-      // Processar pendentes - extrair só a última ação
-      const pendentesComAcao = (pendentesData || []).map((nota: any) => {
-        const eventos = nota.eventos || []
-        const ultimaAcao = eventos.length > 0
-          ? eventos.sort((a: any, b: any) => 
-              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            )[0]
-          : null
-        return { ...nota, ultimaAcao }
-      })
-
-      setPendentes(pendentesComAcao)
+      setPendentes(pendentesData || [])
 
       // Buscar notas pagas (sem eventos)
       const { data: pagasData } = await supabase
@@ -252,7 +241,7 @@ export default function ClienteDetailPage() {
               </h3>
             </div>
             <Card className="divide-y divide-[#E5E5E5]">
-              {pendentes.map((nota) => (
+              {pendentes.map((nota: any) => (
                 <NotaCard
                   key={nota.id}
                   nota={{
@@ -265,7 +254,7 @@ export default function ClienteDetailPage() {
                     apelido: cliente.apelido,
                     telefone: cliente.telefone,
                   }}
-                  ultimaAcao={nota.ultimaAcao}
+                  eventos={nota.eventos || []}
                   showAvatar={false}
                   onCobrar={() => setCobrarNotas([notaToComCliente(nota)])}
                   onMarcarPago={() => handleMarcarPago(nota)}
