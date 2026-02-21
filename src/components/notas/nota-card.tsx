@@ -107,53 +107,49 @@ export function NotaCard({
 
   return (
     <>
-      <div className="bg-white">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3 flex-1">
-            {/* Avatar */}
-            {showAvatar && (
-              <div className="h-10 w-10 rounded-full bg-black text-white flex items-center justify-center text-sm font-semibold shrink-0">
-                {(cliente.nome?.[0] || 'C').toUpperCase()}
-              </div>
-            )}
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#02090A] truncate">
-                {displayName}
-              </p>
-              <p className="text-sm text-[#6B7280]">
-                {formatCurrencyShort(Number(nota.valor))} · {getStatusText()}
-              </p>
-              
-              {/* Última ação - só uma linha */}
-              {ultimaAcao && (
-                <p className="text-xs text-[#6B7280] mt-1 flex items-center gap-1">
-                  <span>{getAcaoIcon(ultimaAcao.tipo)}</span>
-                  <span>{getAcaoText(ultimaAcao.tipo)} · {formatAcaoTime(ultimaAcao.created_at)}</span>
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Botões - lado direito em coluna */}
-          {nota.status !== 'pago' && (
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => setShowConfirm(true)}
-                className="h-8 px-3 rounded-full bg-white border border-zinc-300 text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition-colors whitespace-nowrap"
-              >
-                Pago ✓
-              </button>
-              <button
-                onClick={onCobrar}
-                className="h-8 px-3 rounded-full bg-black text-white text-xs font-medium hover:bg-zinc-800 transition-colors whitespace-nowrap"
-              >
-                Cobrar →
-              </button>
+      <div className="bg-white border border-zinc-200 rounded-none p-4">
+        {/* Linha 1: Avatar + Nome */}
+        <div className="flex items-center gap-3">
+          {showAvatar && (
+            <div className="h-10 w-10 rounded-full bg-black text-white flex items-center justify-center text-sm font-semibold shrink-0">
+              {(cliente.nome?.[0] || 'C').toUpperCase()}
             </div>
           )}
+          <p className="text-sm font-semibold text-[#02090A] truncate">
+            {displayName}
+          </p>
         </div>
+
+        {/* Linha 2: Valor + Status */}
+        <p className="text-sm text-[#6B7280] mt-1">
+          {formatCurrencyShort(Number(nota.valor))} · {getStatusText()}
+        </p>
+
+        {/* Linha 3: Última ação (só se existir) */}
+        {ultimaAcao && (
+          <p className="text-xs text-[#6B7280] mt-2 flex items-center gap-1">
+            <span>{getAcaoIcon(ultimaAcao.tipo)}</span>
+            <span>{getAcaoText(ultimaAcao.tipo)} · {formatAcaoTime(ultimaAcao.created_at)}</span>
+          </p>
+        )}
+
+        {/* Linha 4: Botões lado a lado */}
+        {nota.status !== 'pago' && (
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={() => setShowConfirm(true)}
+              className="flex-1 h-10 rounded-full bg-white border border-zinc-300 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
+            >
+              Pago ✓
+            </button>
+            <button
+              onClick={onCobrar}
+              className="flex-1 h-10 rounded-full bg-black text-white text-sm font-medium hover:bg-zinc-800 transition-colors"
+            >
+              Cobrar →
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Modal de confirmação */}
