@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -23,6 +23,7 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
   const [mensagem, setMensagem] = useState('')
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
+  const mensagemRef = useRef<HTMLTextAreaElement>(null)
 
   const total = notas.reduce((acc, n) => acc + Number(n.valor), 0)
   const cliente = notas[0]
@@ -69,6 +70,13 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
       gerarMensagem()
     }
   }, [open, notas.length, gerarMensagem])
+
+  useEffect(() => {
+    if (loading || !mensagemRef.current) return
+    const el = mensagemRef.current
+    el.style.height = '0px'
+    el.style.height = `${el.scrollHeight}px`
+  }, [mensagem, loading])
 
   async function handleEnviar() {
     if (!profile || !cliente) return
@@ -124,10 +132,15 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
           </div>
         ) : (
           <textarea
+            ref={mensagemRef}
             value={mensagem}
-            onChange={(e) => setMensagem(e.target.value)}
+            onChange={(e) => {
+              setMensagem(e.target.value)
+              e.target.style.height = '0px'
+              e.target.style.height = `${e.target.scrollHeight}px`
+            }}
             aria-label="Mensagem de cobrança"
-            className="w-full min-h-[200px] bg-transparent p-0 border-0 rounded-none text-sm leading-7 text-text-primary outline-none resize-none appearance-none"
+            className="w-full bg-transparent p-0 border-0 rounded-none text-sm leading-7 text-text-primary outline-none resize-none appearance-none overflow-hidden"
           />
         )}
       </div>
