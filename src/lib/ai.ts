@@ -6,11 +6,6 @@ function getApiKey(): string {
     process.env.GOOGLE_API_KEY ||
     process.env.GOOGLE_GENERATIVE_AI_API_KEY
 
-  // Durante o build, retorna um valor dummy para não quebrar
-  if (process.env.NODE_ENV === 'production' && !apiKey) {
-    return 'dummy-key-for-build'
-  }
-
   if (!apiKey) {
     throw new Error(
       'Google Generative AI API key is missing. Set GEMINI_API_KEY or GOOGLE_API_KEY.'
