@@ -82,7 +82,8 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
     if (!profile || !cliente) return
     try {
       setSending(true)
-      const fullMessage = `${mensagem}\n\n${linkPix}`
+      const linkPixSemPreview = linkPix.replace(/^https?:\/\//, '')
+      const fullMessage = `${mensagem}\n\n${linkPixSemPreview}`
       openWhatsApp(cliente.cliente_telefone, fullMessage)
 
       const supabase = createClient()
