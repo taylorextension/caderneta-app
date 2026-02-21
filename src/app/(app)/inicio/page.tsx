@@ -336,7 +336,7 @@ export default function InicioPage() {
                         apelido: nota.apelido,
                         telefone: nota.cliente_telefone,
                       }}
-                      ultimaAcao={ultimasAcoes.get(nota.id)}
+                      eventos={[]}
                       showAvatar={true}
                       onCobrar={() => setCobrarNotas([nota])}
                       onMarcarPago={() => handleMarcarPago(nota)}
@@ -365,7 +365,7 @@ export default function InicioPage() {
                         apelido: nota.apelido,
                         telefone: nota.cliente_telefone,
                       }}
-                      ultimaAcao={ultimasAcoes.get(nota.id)}
+                      eventos={[]}
                       showAvatar={true}
                       onCobrar={() => setCobrarNotas([nota])}
                       onMarcarPago={() => handleMarcarPago(nota)}
