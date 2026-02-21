@@ -32,6 +32,45 @@ export default function InicioPage() {
       setLoading(true)
       const supabase = createClient()
 
+      const carregarUltimasAcoes = async (notaIds: string[]) => {
+        if (notaIds.length === 0) {
+          setUltimasAcoes(new Map())
+          return
+        }
+
+        const { data: cobrancasData } = await supabase
+          .from('cobrancas')
+          .select('nota_id, enviado_em')
+          .in('nota_id', notaIds)
+          .order('enviado_em', { ascending: false })
+
+        const { data: eventosData } = await supabase
+          .from('eventos')
+          .select('nota_id, tipo, created_at')
+          .in('nota_id', notaIds)
+          .order('created_at', { ascending: false })
+
+        const acoesMap = new Map<string, { tipo: string; created_at: string }>()
+
+        cobrancasData?.forEach((c: any) => {
+          if (!acoesMap.has(c.nota_id)) {
+            acoesMap.set(c.nota_id, {
+              tipo: 'lembrete_enviado',
+              created_at: c.enviado_em,
+            })
+          }
+        })
+
+        eventosData?.forEach((e: any) => {
+          const existing = acoesMap.get(e.nota_id)
+          if (!existing || new Date(e.created_at) > new Date(existing.created_at)) {
+            acoesMap.set(e.nota_id, { tipo: e.tipo, created_at: e.created_at })
+          }
+        })
+
+        setUltimasAcoes(acoesMap)
+      }
+
       const { data: inicioResult, error: inicioError } = await supabase.rpc(
         'get_inicio',
         {
@@ -40,7 +79,11 @@ export default function InicioPage() {
       )
 
       if (!inicioError && inicioResult) {
-        setData(inicioResult as InicioData)
+        const inicioData = inicioResult as InicioData
+        setData(inicioData)
+
+        const notaIds = [...inicioData.vencidas, ...inicioData.vencendo].map((nota) => nota.id)
+        await carregarUltimasAcoes(notaIds)
         return
       }
 
@@ -183,40 +226,8 @@ export default function InicioPage() {
         recebidos_hoje: recebidosHoje,
       })
 
-      // Buscar últimas ações (cobranças e eventos) para as notas pendentes
-      const notaIds = [...vencidas, ...vencendo].map(n => n.id)
-      if (notaIds.length > 0) {
-        const { data: cobrancasData } = await supabase
-          .from('cobrancas')
-          .select('nota_id, enviado_em')
-          .in('nota_id', notaIds)
-          .order('enviado_em', { ascending: false })
-
-        const { data: eventosData } = await supabase
-          .from('eventos')
-          .select('nota_id, tipo, created_at')
-          .in('nota_id', notaIds)
-          .order('created_at', { ascending: false })
-
-        const acoesMap = new Map<string, { tipo: string; created_at: string }>()
-
-        // Adiciona cobranças ao map
-        cobrancasData?.forEach((c: any) => {
-          if (!acoesMap.has(c.nota_id)) {
-            acoesMap.set(c.nota_id, { tipo: 'lembrete_enviado', created_at: c.enviado_em })
-          }
-        })
-
-        // Adiciona eventos ao map (só se for mais recente que a cobrança)
-        eventosData?.forEach((e: any) => {
-          const existing = acoesMap.get(e.nota_id)
-          if (!existing || new Date(e.created_at) > new Date(existing.created_at)) {
-            acoesMap.set(e.nota_id, { tipo: e.tipo, created_at: e.created_at })
-          }
-        })
-
-        setUltimasAcoes(acoesMap)
-      }
+      const notaIds = [...vencidas, ...vencendo].map((nota) => nota.id)
+      await carregarUltimasAcoes(notaIds)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao carregar dados'
       addToast({ message, type: 'error' })

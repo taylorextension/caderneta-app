@@ -1,8 +1,14 @@
-import { useState } from 'react'
-import { formatCurrencyShort, formatRelativeDate } from '@/lib/format'
+import { useState, type ComponentType } from 'react'
+import { formatCurrencyShort } from '@/lib/format'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/stores/ui-store'
+import {
+  ClipboardDocumentCheckIcon,
+  EyeIcon,
+  PaperAirplaneIcon,
+  SparklesIcon,
+} from '@heroicons/react/24/outline'
 
 interface NotaCardProps {
   nota: {
@@ -61,13 +67,13 @@ export function NotaCard({
     return `em ${diasParaVencer} dias`
   }
 
-  const getAcaoIcon = (tipo: string) => {
-    const icons: Record<string, string> = {
-      lembrete_enviado: '📤',
-      link_aberto: '👀',
-      pix_copiado: '📋',
+  const getAcaoIcon = (tipo: string): ComponentType<{ className?: string }> => {
+    const icons: Record<string, ComponentType<{ className?: string }>> = {
+      lembrete_enviado: PaperAirplaneIcon,
+      link_aberto: EyeIcon,
+      pix_copiado: ClipboardDocumentCheckIcon,
     }
-    return icons[tipo] || '📌'
+    return icons[tipo] || SparklesIcon
   }
 
   const getAcaoText = (tipo: string) => {
@@ -127,8 +133,11 @@ export function NotaCard({
 
         {/* Linha 3: Última ação (só se existir) */}
         {ultimaAcao && (
-          <p className="text-xs text-[#6B7280] mt-2 flex items-center gap-1">
-            <span>{getAcaoIcon(ultimaAcao.tipo)}</span>
+          <p className="text-xs text-[#6B7280] mt-2 flex items-center gap-1.5">
+            {(() => {
+              const AcaoIcon = getAcaoIcon(ultimaAcao.tipo)
+              return <AcaoIcon className="h-3.5 w-3.5 shrink-0" />
+            })()}
             <span>{getAcaoText(ultimaAcao.tipo)} · {formatAcaoTime(ultimaAcao.created_at)}</span>
           </p>
         )}
