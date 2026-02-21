@@ -83,7 +83,8 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
     try {
       setSending(true)
       const linkPixSemPreview = linkPix.replace(/^https?:\/\//, '')
-      const fullMessage = `${mensagem}\n\n${linkPixSemPreview}`
+      const avisoPix = 'Pode usar este link para fazer o Pix 👇'
+      const fullMessage = `${mensagem}\n\n${avisoPix}\n${linkPixSemPreview}`
       openWhatsApp(cliente.cliente_telefone, fullMessage)
 
       const supabase = createClient()
