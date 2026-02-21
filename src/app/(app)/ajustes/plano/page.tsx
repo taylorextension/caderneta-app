@@ -3,61 +3,110 @@
 import { useRouter } from 'next/navigation'
 import { useTrial } from '@/hooks/use-trial'
 import { useAuthStore } from '@/stores/auth-store'
+import { useUIStore } from '@/stores/ui-store'
 import { PageTransition } from '@/components/layout/page-transition'
-import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { PaywallModal } from '@/components/paywall/paywall-modal'
-import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, CheckCircleIcon } from '@heroicons/react/24/solid'
+
+const FEATURES = [
+  'Clientes ilimitados',
+  'IA escreve cobranças',
+  'Escaneia notas com câmera',
+  'Pix automático com QR Code',
+  'Saiba se abriram sua cobrança',
+  'Suporte via WhatsApp',
+]
 
 export default function PlanoPage() {
   const router = useRouter()
-  const profile = useAuthStore((s) => s.profile)
+  const addToast = useUIStore((s) => s.addToast)
   const { trialAtivo, diasRestantes, assinaturaAtiva, acesso } = useTrial()
 
   if (!acesso) {
     return <PaywallModal />
   }
 
+  // Calcular progresso (14 dias de trial)
+  const DIAS_TRIAL = 14
+  const diasUsados = Math.max(0, DIAS_TRIAL - diasRestantes)
+  const progresso = Math.min(100, (diasUsados / DIAS_TRIAL) * 100)
+  const trialAcabando = diasRestantes <= 3 && diasRestantes > 0
+  const trialVencido = diasRestantes <= 0
+
   return (
     <PageTransition>
       <div className="p-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1 text-sm text-text-secondary mb-4"
+          className="flex items-center gap-1 text-sm text-[#6B7280] mb-4"
         >
           <ArrowLeftIcon className="h-4 w-4" />
           Ajustes
         </button>
 
-        <h1 className="text-xl font-semibold mb-6">Meu plano</h1>
+        <h1 className="text-xl font-semibold text-[#02090A] mb-6">Meu plano</h1>
 
-        <Card>
-          {assinaturaAtiva ? (
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <CheckIcon className="h-5 w-5 text-success" />
-                <span className="text-sm font-semibold">Plano Pro ativo</span>
-              </div>
-              <p className="text-sm text-text-secondary">
-                R$ 29,90/mês · Todos os recursos liberados
-              </p>
+        {/* Card do trial */}
+        <Card className="p-4">
+          <p className="text-base font-semibold text-[#02090A] mb-4">
+            {trialVencido ? 'Período grátis encerrado' : 'Período grátis'}
+          </p>
+
+          {/* Progress bar */}
+          <div className="h-2 bg-zinc-200 rounded-full w-full mb-2">
+            <div
+              className={`h-2 rounded-full transition-all ${
+                trialVencido || trialAcabando ? 'bg-red-500' : 'bg-black'
+              }`}
+              style={{ width: `${trialVencido ? 100 : progresso}%` }}
+            />
+          </div>
+
+          <p className="text-xs text-[#6B7280] mb-4">
+            {trialVencido
+              ? 'Seu período grátis acabou'
+              : `${diasRestantes} dias restantes`}
+          </p>
+
+          <p className="text-sm text-[#6B7280]">
+            Todos os recursos estão liberados durante o período grátis.
+          </p>
+        </Card>
+
+        {/* O que está incluso */}
+        <div className="mt-6">
+          <p className="text-sm font-semibold text-[#02090A] mb-3">O que está incluso:</p>
+          <Card className="p-4">
+            <div className="space-y-3">
+              {FEATURES.map((feature) => (
+                <div key={feature} className="flex items-center gap-3">
+                  <CheckCircleIcon className="h-5 w-5 text-black shrink-0" />
+                  <span className="text-sm text-[#02090A]">{feature}</span>
+                </div>
+              ))}
             </div>
-          ) : trialAtivo ? (
-            <div>
-              <p className="text-sm font-semibold mb-1">Período grátis</p>
-              <p className="text-sm text-text-secondary">
-                {diasRestantes} dias restantes · Todos os recursos liberados
-              </p>
-              <p className="text-xs text-text-muted mt-2">
-                Após o período grátis: R$ 29,90/mês
-              </p>
-            </div>
-          ) : (
-            <div>
-              <p className="text-sm font-semibold mb-1">Período grátis encerrado</p>
-              <Button className="w-full mt-4">Assinar · R$ 29,90/mês</Button>
-            </div>
-          )}
+          </Card>
+        </div>
+
+        {/* Card de preço */}
+        <Card className={`p-4 ${trialVencido ? 'mt-8' : 'mt-6'}`}>
+          <div className="text-center py-2">
+            <p className="text-2xl font-bold text-[#02090A]">R$ 29,90/mês</p>
+            <p className="text-xs text-[#9CA3AF] mt-1">Cancele quando quiser.</p>
+
+            <button
+              onClick={() =>
+                addToast({
+                  message: 'Em breve! Pagamento em implementação.',
+                  type: 'info',
+                })
+              }
+              className="w-full h-12 mt-4 rounded-full bg-black text-white text-sm font-medium hover:bg-zinc-800 transition-colors"
+            >
+              Assinar agora
+            </button>
+          </div>
         </Card>
       </div>
     </PageTransition>
