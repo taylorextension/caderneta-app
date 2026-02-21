@@ -279,7 +279,7 @@ export default function ClienteDetailPage() {
               <div className="w-2 h-2 rounded-full bg-[#22C55E]" />
               <h3 className="text-sm font-semibold text-[#02090A]">
                 Pagas · {pagas.length}
-003c/h3>
+              </h3>
             </div>
             <Card className="divide-y divide-[#E5E5E5]">
               {pagas.map((nota) => (
