@@ -63,14 +63,18 @@ export default function CadastroPage() {
       if (error) throw error
       if (!data.user) throw new Error('Erro ao criar conta')
 
-      const { error: profileError } = await supabase.from('profiles').insert({
+      // Usa upsert para evitar erro se o profile já existir (trigger ou race condition)
+      const { error: profileError } = await supabase.from('profiles').upsert({
         id: data.user.id,
         nome: form.nome,
         nome_loja: '',
         telefone: form.telefone,
-      })
+      }, { onConflict: 'id' })
 
-      if (profileError) throw profileError
+      // Ignora erro de profile se a conta foi criada — o setup vai completar depois
+      if (profileError) {
+        console.warn('Aviso profile:', profileError.message)
+      }
 
       router.push('/setup')
     } catch (err) {
