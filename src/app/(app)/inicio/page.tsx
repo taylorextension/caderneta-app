@@ -161,10 +161,10 @@ export default function InicioPage() {
 
         if (clientesError) throw clientesError
 
-        ;(clientesData || []).forEach((cliente) => {
-          const c = cliente as ClienteBase
-          clientesMap.set(c.id, c)
-        })
+          ; (clientesData || []).forEach((cliente) => {
+            const c = cliente as ClienteBase
+            clientesMap.set(c.id, c)
+          })
       }
 
       const today = new Date(startOfToday)
@@ -238,7 +238,59 @@ export default function InicioPage() {
 
   useEffect(() => {
     fetchData()
-  }, [fetchData])
+
+    // Realtime subscription
+    if (!profile) return
+    const supabase = createClient()
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notas',
+          filter: `user_id=eq.${profile.id}`,
+        },
+        () => fetchData()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'clientes',
+          filter: `user_id=eq.${profile.id}`,
+        },
+        () => fetchData()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cobrancas',
+          filter: `user_id=eq.${profile.id}`,
+        },
+        () => fetchData()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'eventos',
+          filter: `user_id=eq.${profile.id}`,
+        },
+        () => fetchData()
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [fetchData, profile])
 
   const handleMarcarPago = useCallback(async (nota: NotaComCliente) => {
     if (!profile) return
@@ -248,14 +300,14 @@ export default function InicioPage() {
         .from('notas')
         .update({ status: 'pago', data_pagamento: new Date().toISOString() })
         .eq('id', nota.id)
-      
+
       await supabase.from('eventos').insert({
         nota_id: nota.id,
         cliente_id: nota.cliente_id,
         user_id: profile.id,
         tipo: 'marcou_pago',
       })
-      
+
       addToast({
         message: 'Pagamento registrado!',
         type: 'success',
@@ -276,7 +328,7 @@ export default function InicioPage() {
           },
         },
       })
-      
+
       fetchData()
     } catch {
       addToast({ message: 'Erro ao atualizar', type: 'error' })

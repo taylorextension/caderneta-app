@@ -38,10 +38,17 @@ export default function SetupPage() {
     try {
       setLoading(true)
       const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+
+      // Tenta obter o usuário com retry simples para casos de propagação lenta de sessão
+      let { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        // Fallback para getSession se getUser falhar (comum logo após o signup)
+        const { data: { session } } = await supabase.auth.getSession()
+        user = session?.user || null
+      }
+
+      if (!user) throw new Error('Usuario nao autenticado. Tente fazer login novamente.')
 
       let profileData: { id: string } | null = null
 
@@ -106,10 +113,17 @@ export default function SetupPage() {
     try {
       setLoading(true)
       const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+
+      // Tenta obter o usuário com retry simples para casos de propagação lenta de sessão
+      let { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        // Fallback para getSession se getUser falhar (comum logo após o signup)
+        const { data: { session } } = await supabase.auth.getSession()
+        user = session?.user || null
+      }
+
+      if (!user) throw new Error('Usuario nao autenticado. Tente fazer login novamente.')
 
       let profileData: { id: string } | null = null
 
@@ -171,9 +185,8 @@ export default function SetupPage() {
           {[1, 2, 3].map((s) => (
             <div
               key={s}
-              className={`h-2 w-2 rounded-full transition-colors ${
-                s === step ? 'bg-black' : 'bg-border'
-              }`}
+              className={`h-2 w-2 rounded-full transition-colors ${s === step ? 'bg-black' : 'bg-border'
+                }`}
             />
           ))}
         </div>
