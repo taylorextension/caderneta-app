@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "skills": {
+    "humanize": {
+      "source": "humanizerai/agent-skills",
+      "sourceType": "github",
+      "computedHash": "0c272016e5734530bf8604533aee2f293444c5d3b3e83eb234b1d65534159160"
+    },
+    "prompt-engineering-patterns": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "a36a340ebbd6a401f29bffa18b466f4fb1aa3caa23a63a570fd1033f8c62a94f"
+    },
+    "sales-page-copywriting": {
+      "source": "yashaiguy-dev/sales-page-copywriting-skill",
+      "sourceType": "github",
+      "computedHash": "9b715069e456a23c2b9f7e456de97480d7a4bcaeb2a84a5ad8c87f84a60ee551"
+    }
+  }
+}
