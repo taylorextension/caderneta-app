@@ -82,7 +82,10 @@ export default function LoginPage() {
     }
     try {
       const supabase = createClient()
-      await supabase.auth.resetPasswordForEmail(form.email)
+      const redirectUrl = `${window.location.origin}/redefinir-senha`
+      await supabase.auth.resetPasswordForEmail(form.email, {
+        redirectTo: redirectUrl,
+      })
       addToast({ message: 'Email de recuperação enviado', type: 'success' })
     } catch {
       addToast({ message: 'Erro ao enviar email', type: 'error' })
