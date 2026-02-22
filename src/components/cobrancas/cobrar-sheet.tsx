@@ -82,8 +82,7 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
     if (!profile || !cliente) return
     try {
       setSending(true)
-      const avisoPix = 'Pode usar este link para fazer o Pix 👇'
-      const fullMessage = `${mensagem}\n\n${avisoPix}\n${linkPix}`
+      const fullMessage = `${mensagem}\n\n*Clique aqui pra pagar* 👇\n\n${linkPix}`
       openWhatsApp(cliente.cliente_telefone, fullMessage)
 
       const supabase = createClient()

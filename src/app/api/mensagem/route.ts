@@ -4,52 +4,119 @@ import { geminiFlash } from '@/lib/ai'
 import type { MensagemRequest } from '@/types/api'
 
 function buildPrompt(data: MensagemRequest): string {
-  // Validações de segurança
   if (!data.notas || data.notas.length === 0) {
     return 'Oi! Passando pra lembrar da continha. Dá pra acertar pelo Pix? Obrigado!'
   }
 
-  const maxVezesCobrado = Math.max(...data.notas.map((n) => n.vezes_cobrado || 0))
+  // Sempre usa o NOME, não apelido
+  const primeiroNome = (data.cliente_nome || 'Cliente').split(' ')[0]
+  const nomeLoja = data.nome_loja || ''
+  const nomeLojista = data.lojista_nome?.split(' ')[0] || ''
+  const totalFormatado = Number(data.total || 0).toFixed(2).replace('.', ',')
 
-  const itensText = data.notas
-    .map((n) => {
-      const items = n.itens?.length > 0
-        ? n.itens.map((i) => `• ${i.descricao} (${i.quantidade}x R$${i.valor_unitario.toFixed(2)})`).join('\n')
-        : n.descricao || 'Compra'
-      return `${items}\nValor: R$${Number(n.valor || 0).toFixed(2)}`
-    })
-    .join('\n---\n')
-
-  const nomeCliente = data.cliente_nome || 'Cliente'
-  const primeiroNome = nomeCliente.split(' ')[0]
-
-  // Define tom baseado em quantas vezes cobrou
-  let tom = ''
-  if (maxVezesCobrado === 0) {
-    tom = 'amigável e casual, como lembrar um amigo'
-  } else if (maxVezesCobrado <= 2) {
-    tom = 'cordial mas direto'
-  } else {
-    tom = 'empático e compreensivo'
+  // Detecta preposição correta para o nome do comércio
+  const primeiraParaLoja = nomeLoja.split(' ')[0]?.toLowerCase() || ''
+  const femininos = ['padaria', 'mercearia', 'loja', 'casa', 'distribuidora', 'doceria', 'confeitaria', 'papelaria', 'farmácia', 'farmacia', 'quitanda', 'barraca', 'feira', 'cantina', 'lanchonete', 'pizzaria', 'sorveteria', 'tabacaria', 'drogaria', 'ótica', 'otica', 'floricultura', 'academia', 'barbearia', 'oficina', 'borracharia']
+  const masculinos = ['mercado', 'mercadinho', 'bar', 'super', 'supermercado', 'armazem', 'armazém', 'atacado', 'atacadão', 'atacadao', 'empório', 'emporio', 'restaurante', 'boteco', 'petshop', 'pet', 'açougue', 'acougue', 'posto', 'salão', 'salao', 'estúdio', 'estudio', 'depósito', 'deposito']
+  let refLoja = ''
+  if (nomeLoja) {
+    if (femininos.includes(primeiraParaLoja)) {
+      refLoja = `da ${nomeLoja}`
+    } else if (masculinos.includes(primeiraParaLoja)) {
+      refLoja = `do ${nomeLoja}`
+    } else {
+      // Tenta inferir pelo final da primeira palavra
+      if (primeiraParaLoja.endsWith('ia') || primeiraParaLoja.endsWith('ria') || primeiraParaLoja.endsWith('ca') || primeiraParaLoja.endsWith('da') || primeiraParaLoja.endsWith('ça') || primeiraParaLoja.endsWith('sa')) {
+        refLoja = `da ${nomeLoja}`
+      } else {
+        refLoja = `do ${nomeLoja}`
+      }
+    }
   }
 
-  return `Escreva uma mensagem de WhatsApp para cobrar ${primeiroNome}.
+  // Calcula dias vencidos da nota mais antiga
+  const diasVencidos = data.notas
+    .filter(n => n.data_vencimento)
+    .map(n => {
+      const diff = Date.now() - new Date(n.data_vencimento!).getTime()
+      return Math.floor(diff / (1000 * 60 * 60 * 24))
+    })
+    .filter(d => d > 0)
+  const maiorAtraso = diasVencidos.length > 0 ? Math.max(...diasVencidos) : 0
 
-TOM: ${tom}
+  // Contexto de vencimento para o prompt
+  let ctxVencimento = ''
+  if (maiorAtraso > 0) {
+    ctxVencimento = `\nDias desde o vencimento: ${maiorAtraso} dias`
+  }
+
+  // Monta lista de itens compacta
+  const itensResumo = data.notas
+    .flatMap((n) =>
+      n.itens?.length > 0
+        ? n.itens.map((i) => `${i.descricao} (${i.quantidade}x)`)
+        : [n.descricao || 'Compra']
+    )
+    .join(', ')
+
+  // Exemplos adaptados ao cenário (com ou sem vencimento)
+  let exemploComVencimento = ''
+  if (maiorAtraso > 0) {
+    exemploComVencimento = `
+3)
+${primeiroNome}, tudo certo?
+
+Aquela continha de *R$${totalFormatado}*${refLoja ? ` aqui ${refLoja}` : ''} já tem ${maiorAtraso} dias.
+
+Quando der, manda um Pix pra gente acertar! 🙏`
+  } else {
+    exemploComVencimento = `
+3)
+${primeiroNome}, beleza?
+
+Aquela continha de *R$${totalFormatado}* tá aberta ainda.
+
+Me manda um Pix quando puder!${nomeLojista ? ` ${nomeLojista}` : ''} 🙏`
+  }
+
+  return `Você gera mensagens curtas de cobrança para WhatsApp de pequenos comércios brasileiros.
+
+TAREFA: Gere UMA mensagem para lembrar ${primeiroNome} da continha de *R$${totalFormatado}*${refLoja ? ` ${refLoja}` : ''}.
+${itensResumo ? `Itens: ${itensResumo}` : ''}${ctxVencimento}
+
+FORMATAÇÃO WHATSAPP:
+- Negrito = UM asterisco: *texto* (nunca **texto**)
+- Máximo 2 emojis
+- Separe a saudação, o corpo e a despedida com linhas em branco (dupla quebra de linha)
+- Isso deixa a mensagem arejada e fácil de ler no celular
 
 REGRAS:
-- Use linguagem simples e direta
-- Máximo 2 emojis
-- Destaque o valor em negrito usando APENAS UM asterisco de cada lado: *R$XXX,XX* (NÃO use dois asteriscos **)
-- NÃO use: dívida, débito, inadimplente, pendência
-- USE: continha, compra, acertar, lembrar
-- Ofereça Pix como forma de pagamento
-- Seja cordial na despedida
-- Responda SÓ a mensagem, sem explicações
+- Tom: amigável e leve, como falar com vizinho
+- Mencione Pix como pagamento
+${maiorAtraso > 0 ? `- Mencione naturalmente que a continha já tem ${maiorAtraso} dias (sem usar a palavra "atraso")` : ''}
+- NUNCA use: dívida, débito, inadimplente, pendência, atraso, cobrança, parcelamento, parcela
+- USE: continha, comprinha, acertar, lembrar
+- NÃO inclua link (é adicionado depois)
+- Responda SÓ a mensagem, nada mais
 
-DADOS:
-${itensText}
-Total: R$${Number(data.total || 0).toFixed(2)}
+EXEMPLOS:
+1)
+Oi ${primeiroNome}! 😊
+
+Passando pra lembrar daquela continha de *R$${totalFormatado}*${refLoja ? ` aqui ${refLoja}` : ''}.
+
+Quando puder, manda por Pix!
+${nomeLojista ? `Abraço, ${nomeLojista}` : 'Valeu!'} 🙏
+
+2)
+E aí ${primeiroNome}, tudo bem?
+
+Só lembrando da comprinha de *R$${totalFormatado}*${refLoja ? ` aqui ${refLoja}` : ''}.
+
+Aceito Pix quando der pra você! 😊
+${exemploComVencimento}
+
+Gere uma mensagem DIFERENTE dos exemplos acima, variando estrutura e palavras. Mesma vibe, texto novo.
 
 MENSAGEM:`
 }
@@ -57,26 +124,16 @@ MENSAGEM:`
 export async function POST(request: NextRequest) {
   try {
     const data: MensagemRequest = await request.json()
-    
-    console.log('=== API MENSAGEM ===')
-    console.log('Cliente:', data.cliente_nome)
-    console.log('Notas:', data.notas?.length)
-    console.log('GEMINI_API_KEY exists:', !!process.env.GEMINI_API_KEY)
-    console.log('GOOGLE_API_KEY exists:', !!process.env.GOOGLE_API_KEY)
 
     const prompt = buildPrompt(data)
-    console.log('Prompt:', prompt.substring(0, 200))
 
     try {
       const result = await generateText({
         model: geminiFlash(),
         prompt: prompt,
-        temperature: 0.7,
-        maxTokens: 500,
+        temperature: 0.8,
+        maxTokens: 200,
       })
-      
-      console.log('Resultado:', result)
-      console.log('Texto gerado:', result?.text?.substring(0, 100))
 
       if (!result.text || result.text.trim().length < 10) {
         throw new Error('Resposta vazia ou muito curta')
