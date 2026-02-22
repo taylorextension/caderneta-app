@@ -107,17 +107,43 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
         body: JSON.stringify({ image: base64 }),
       })
       const data = await res.json()
+      let hasData = false
+
       if (data.itens && data.itens.length > 0) {
         setItens(data.itens)
         setShowItens(true)
+        hasData = true
+      }
+
+      const parsedTotal = Number(data.total_detectado)
+      if (parsedTotal > 0) {
+        setValor(parsedTotal.toFixed(2))
+        hasData = true
+      } else if (data.itens && data.itens.length > 0) {
         const total = data.itens.reduce(
           (acc: number, item: ItemNota) => acc + item.quantidade * item.valor_unitario,
           0
         )
         setValor(total.toFixed(2))
-        addToast({ message: 'Nota escaneada com sucesso', type: 'success' })
+        hasData = true
+      }
+
+      if (data.descricao_resumida) {
+        setDescricao(data.descricao_resumida)
+        hasData = true
+      }
+
+      if (data.data_vencimento) {
+        setVencimentoCustom(data.data_vencimento)
+        setVencimento(data.data_vencimento)
+        setShowCustomDate(true)
+        hasData = true
+      }
+
+      if (hasData) {
+        addToast({ message: 'Dados extraídos da nota!', type: 'success' })
       } else {
-        addToast({ message: 'Não foi possível ler a nota', type: 'warning' })
+        addToast({ message: 'Não foi possível ler os valores da nota', type: 'warning' })
       }
     } catch {
       addToast({ message: 'Erro ao processar imagem', type: 'error' })
@@ -191,10 +217,10 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
     try {
       setSaving(true)
       const supabase = createClient()
-      
+
       // Se for à vista (sem vencimento), marca como paga
       const isAVista = !vencimentoCustom && !vencimento
-      
+
       const { error } = await supabase.from('notas').insert({
         user_id: profile.id,
         cliente_id: selectedCliente.id,
@@ -206,7 +232,7 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
         data_pagamento: isAVista ? new Date().toISOString() : null,
       })
       if (error) throw error
-      
+
       const msg = isAVista ? 'Venda à vista registrada' : 'Venda registrada'
       addToast({ message: msg, type: 'success' })
       onClose()
@@ -233,9 +259,8 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
           {[1, 2, 3].map((s) => (
             <div
               key={s}
-              className={`h-2 w-2 rounded-full transition-colors ${
-                s === step ? 'bg-black' : 'bg-border'
-              }`}
+              className={`h-2 w-2 rounded-full transition-colors ${s === step ? 'bg-black' : 'bg-border'
+                }`}
             />
           ))}
         </div>
@@ -424,11 +449,10 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                     <button
                       key={opt.days}
                       onClick={() => selectVencimento(opt.days)}
-                      className={`flex-1 min-w-[80px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
-                        selected
+                      className={`flex-1 min-w-[80px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${selected
                           ? 'bg-black text-white border-black'
                           : 'bg-white text-text-primary border-gray-300'
-                      }`}
+                        }`}
                     >
                       {opt.label}
                     </button>
@@ -440,11 +464,10 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
               <div className="flex flex-wrap gap-2 mb-4">
                 {/* Data específica */}
                 <label
-                  className={`flex-1 min-w-[120px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer text-center ${
-                    showCustomDate
+                  className={`flex-1 min-w-[120px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer text-center ${showCustomDate
                       ? 'bg-black text-white border-black'
                       : 'bg-white text-text-primary border-gray-300'
-                  }`}
+                    }`}
                 >
                   {showCustomDate && vencimentoCustom
                     ? formatDueDate(vencimentoCustom)
@@ -468,11 +491,10 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                 {/* À vista */}
                 <button
                   onClick={() => selectVencimento(null)}
-                  className={`flex-1 min-w-[100px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
-                    !vencimento && !showCustomDate
+                  className={`flex-1 min-w-[100px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${!vencimento && !showCustomDate
                       ? 'bg-black text-white border-black'
                       : 'bg-white text-text-primary border-gray-300'
-                  }`}
+                    }`}
                 >
                   À vista
                 </button>

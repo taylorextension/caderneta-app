@@ -363,22 +363,25 @@ export default function InicioPage() {
         </h1>
         <p className="text-sm text-text-secondary">{profile?.nome_loja}</p>
 
-        {isEmpty ? (
-          <EmptyState
-            icon={<ShoppingBagIcon className="h-12 w-12" />}
-            title="Nenhuma venda"
-            description="Comece anotando a primeira venda fiado."
-            actionLabel="Nova venda"
-            onAction={() => setShowWizard(true)}
+        <div className="mt-6">
+          <StatsBar
+            totalPendente={data?.total_pendente || 0}
+            recebidoMes={data?.recebido_mes || 0}
           />
+        </div>
+
+        {isEmpty ? (
+          <div className="mt-8">
+            <EmptyState
+              icon={<ShoppingBagIcon className="h-12 w-12" />}
+              title="Nenhuma venda pendente"
+              description="Comece anotando a primeira venda no fiado."
+              actionLabel="Nova venda"
+              onAction={() => setShowWizard(true)}
+            />
+          </div>
         ) : (
           <>
-            <div className="mt-6">
-              <StatsBar
-                totalPendente={data?.total_pendente || 0}
-                recebidoMes={data?.recebido_mes || 0}
-              />
-            </div>
 
             {data && data.vencidas.length > 0 && (
               <div className="mt-6">
