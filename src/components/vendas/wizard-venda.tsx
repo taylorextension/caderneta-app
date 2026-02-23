@@ -109,27 +109,14 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
       const data = await res.json()
       let hasData = false
 
-      if (data.itens && data.itens.length > 0) {
-        setItens(data.itens)
-        setShowItens(true)
-        hasData = true
-      }
-
-      const parsedTotal = Number(data.total_detectado)
+      const parsedTotal = Number(data.total)
       if (parsedTotal > 0) {
         setValor(parsedTotal.toFixed(2))
         hasData = true
-      } else if (data.itens && data.itens.length > 0) {
-        const total = data.itens.reduce(
-          (acc: number, item: ItemNota) => acc + item.quantidade * item.valor_unitario,
-          0
-        )
-        setValor(total.toFixed(2))
-        hasData = true
       }
 
-      if (data.descricao_resumida) {
-        setDescricao(data.descricao_resumida)
+      if (data.descricao) {
+        setDescricao(data.descricao)
         hasData = true
       }
 
@@ -450,8 +437,8 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                       key={opt.days}
                       onClick={() => selectVencimento(opt.days)}
                       className={`flex-1 min-w-[80px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${selected
-                          ? 'bg-black text-white border-black'
-                          : 'bg-white text-text-primary border-gray-300'
+                        ? 'bg-black text-white border-black'
+                        : 'bg-white text-text-primary border-gray-300'
                         }`}
                     >
                       {opt.label}
@@ -465,8 +452,8 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                 {/* Data específica */}
                 <label
                   className={`flex-1 min-w-[120px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer text-center ${showCustomDate
-                      ? 'bg-black text-white border-black'
-                      : 'bg-white text-text-primary border-gray-300'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-text-primary border-gray-300'
                     }`}
                 >
                   {showCustomDate && vencimentoCustom
@@ -492,8 +479,8 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                 <button
                   onClick={() => selectVencimento(null)}
                   className={`flex-1 min-w-[100px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${!vencimento && !showCustomDate
-                      ? 'bg-black text-white border-black'
-                      : 'bg-white text-text-primary border-gray-300'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-text-primary border-gray-300'
                     }`}
                 >
                   À vista

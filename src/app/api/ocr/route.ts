@@ -2,29 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { geminiFlash } from '@/lib/ai'
 
-const OCR_PROMPT = `Você é um analista especialista em extração de dados de notas promissórias, recibos informais, notas fiscais e comprovantes brasileiros.
-Aja extraindo os dados exatos contidos na imagem e respondendo APENAS com um objeto JSON válido, sem formatação markdown ou textos extras.
+const OCR_PROMPT = `Extraia dados de uma nota, recibo ou comprovante brasileiro.
+Responda APENAS com JSON válido (sem markdown).
 
-Estrutura EXATA do JSON esperado:
 {
-  "cliente_nome": "Nome explícito do cliente ou comprador, null se não encontrar",
-  "data_emissao": "Data em que a compra ocorreu no formato YYYY-MM-DD, null se não encontrar",
-  "data_vencimento": "Data em que o cliente deverá pagar/vencimento no formato YYYY-MM-DD, null se não encontrar",
-  "descricao_resumida": "Uma breve descrição humanizada do que trata a nota (ex: 'Compras de padaria', 'Material de construção', 'Pizza'), máximo de 4 palavras",
-  "total_detectado": 0.00,
-  "itens": [
-    { "descricao": "string", "quantidade": 1, "valor_unitario": 0.00 }
-  ],
-  "confianca": "alta"
+  "descricao": "Resumo curto do conteúdo (ex: Compras de padaria, Material elétrico), máx 5 palavras",
+  "data_vencimento": "YYYY-MM-DD ou null",
+  "total": 0.00
 }
 
-Regras Cruciais:
-1. Valores decimais usando PONTO (não vírgula). Ex: "total_detectado": 45.90
-2. "total_detectado" é a prioridade. Se não estiver claro, some os itens. Se não houver itens, extraia apenas o total.
-3. Se o número da quantidade estiver ausente num item, assuma 1.
-4. "confianca" deve ser: "alta", "media" ou "baixa" dependendo da clareza da letra.
-5. Em recibos escritos à mão, tente decifrar com cuidado.
-Não quebre o formato JSON. Nulls onde não encontrar ou não conseguir inferir com boa precisão.`
+Regras:
+- "total": o valor total da nota. Use PONTO decimal, não vírgula. Se houver vários itens, some tudo.
+- "data_vencimento": a data de vencimento/pagamento. Se só houver data de emissão/compra, use ela. null se não encontrar.
+- "descricao": breve descrição humanizada dos itens, SEM valores ou preços individuais.
+- Se a imagem for ilegível, retorne total 0 e descricao null.`
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,7 +50,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('OCR error:', error)
     return NextResponse.json(
-      { error: 'Erro ao processar imagem', itens: [], total_detectado: 0, confianca: 'baixa', observacoes: null },
+      { error: 'Erro ao processar imagem', descricao: null, data_vencimento: null, total: 0 },
       { status: 200 }
     )
   }
