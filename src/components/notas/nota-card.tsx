@@ -140,7 +140,7 @@ export function NotaCard({
 
   return (
     <>
-      <div className="px-3 py-3">
+      <div className="py-2">
         {/* Row 1: Avatar + Name + Edit pill */}
         <div className="flex items-center gap-2.5">
           {showAvatar && (
@@ -186,7 +186,7 @@ export function NotaCard({
               onClick={() => setShowConfirm(true)}
               className="flex-1"
             >
-              Marcar como pago
+              Marcar pago
             </Button>
             <Button
               variant="primary"

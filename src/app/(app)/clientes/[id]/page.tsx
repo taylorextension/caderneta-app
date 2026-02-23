@@ -303,9 +303,9 @@ export default function ClienteDetailPage() {
           <h1 className="text-xl font-semibold text-[#02090A] flex-1">{cliente.nome}</h1>
           <button
             onClick={openEditCliente}
-            className="shrink-0 h-8 w-8 flex items-center justify-center rounded-full hover:bg-black/5 transition-colors"
+            className="shrink-0 px-2.5 py-1 rounded-full bg-black/5 text-[11px] font-medium text-text-secondary hover:bg-black/10 transition-colors"
           >
-            <PencilIcon className="h-4 w-4 text-text-muted" />
+            Editar
           </button>
         </div>
         {cliente.apelido && (
