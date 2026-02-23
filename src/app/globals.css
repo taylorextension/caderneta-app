@@ -19,7 +19,7 @@
   --color-dot-yellow: #EAB308;
   --color-dot-green: #22C55E;
 
-  --font-sans: 'Inter', 'Helvetica', 'Arial', sans-serif;
+  --font-sans: var(--font-inter, 'Inter'), 'Helvetica', 'Arial', sans-serif;
 }
 
 * {

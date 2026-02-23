@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
 import { PageTransition } from '@/components/layout/page-transition'
 import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { PaywallModal } from '@/components/paywall/paywall-modal'
 import { ArrowLeftIcon, CheckCircleIcon } from '@heroicons/react/24/solid'
 
@@ -48,7 +49,7 @@ export default function PlanoPage() {
         <h1 className="text-xl font-semibold text-[#02090A] mb-6">Meu plano</h1>
 
         {/* Card do trial */}
-        <Card className="p-4">
+        <Card>
           <p className="text-base font-semibold text-[#02090A] mb-4">
             {trialVencido ? 'Período grátis encerrado' : 'Período grátis'}
           </p>
@@ -56,9 +57,8 @@ export default function PlanoPage() {
           {/* Progress bar */}
           <div className="h-2 bg-zinc-200 rounded-full w-full mb-2">
             <div
-              className={`h-2 rounded-full transition-all ${
-                trialVencido || trialAcabando ? 'bg-red-500' : 'bg-black'
-              }`}
+              className={`h-2 rounded-full transition-all ${trialVencido || trialAcabando ? 'bg-red-500' : 'bg-black'
+                }`}
               style={{ width: `${trialVencido ? 100 : progresso}%` }}
             />
           </div>
@@ -77,7 +77,7 @@ export default function PlanoPage() {
         {/* O que está incluso */}
         <div className="mt-6">
           <p className="text-sm font-semibold text-[#02090A] mb-3">O que está incluso:</p>
-          <Card className="p-4">
+          <Card>
             <div className="space-y-3">
               {FEATURES.map((feature) => (
                 <div key={feature} className="flex items-center gap-3">
@@ -90,22 +90,22 @@ export default function PlanoPage() {
         </div>
 
         {/* Card de preço */}
-        <Card className={`p-4 ${trialVencido ? 'mt-8' : 'mt-6'}`}>
+        <Card className={trialVencido ? 'mt-8' : 'mt-6'}>
           <div className="text-center py-2">
             <p className="text-2xl font-bold text-[#02090A]">R$ 29,90/mês</p>
             <p className="text-xs text-[#9CA3AF] mt-1">Cancele quando quiser.</p>
 
-            <button
+            <Button
               onClick={() =>
                 addToast({
                   message: 'Em breve! Pagamento em implementação.',
                   type: 'info',
                 })
               }
-              className="w-full h-12 mt-4 rounded-full bg-black text-white text-sm font-medium hover:bg-zinc-800 transition-colors"
+              className="w-full mt-4"
             >
               Assinar agora
-            </button>
+            </Button>
           </div>
         </Card>
       </div>

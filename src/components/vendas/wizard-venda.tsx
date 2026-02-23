@@ -438,7 +438,7 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                       onClick={() => selectVencimento(opt.days)}
                       className={`flex-1 min-w-[80px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${selected
                         ? 'bg-black text-white border-black'
-                        : 'bg-white text-text-primary border-gray-300'
+                        : 'bg-white text-text-primary border-divider'
                         }`}
                     >
                       {opt.label}
@@ -453,7 +453,7 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                 <label
                   className={`flex-1 min-w-[120px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer text-center ${showCustomDate
                     ? 'bg-black text-white border-black'
-                    : 'bg-white text-text-primary border-gray-300'
+                    : 'bg-white text-text-primary border-divider'
                     }`}
                 >
                   {showCustomDate && vencimentoCustom
@@ -480,7 +480,7 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                   onClick={() => selectVencimento(null)}
                   className={`flex-1 min-w-[100px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${!vencimento && !showCustomDate
                     ? 'bg-black text-white border-black'
-                    : 'bg-white text-text-primary border-gray-300'
+                    : 'bg-white text-text-primary border-divider'
                     }`}
                 >
                   À vista

@@ -41,7 +41,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-[100] bg-[#F1F1EF] border-t border-divider"
+      className="fixed bottom-0 left-0 right-0 z-[100] bg-[#F1F1EF] border-t border-divider pb-[env(safe-area-inset-bottom)]"
       style={{ position: 'fixed', bottom: 0, left: 0, right: 0 }}
     >
       <div className="relative flex items-center h-[72px]">

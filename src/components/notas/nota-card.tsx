@@ -115,7 +115,7 @@ export function NotaCard({
 
   return (
     <>
-      <div className="bg-white border border-zinc-200 rounded-none p-4">
+      <div className="p-4">
         {/* Linha 1: Avatar + Nome */}
         <div className="flex items-center gap-3">
           {showAvatar && (
@@ -123,19 +123,19 @@ export function NotaCard({
               {(cliente.nome?.[0] || 'C').toUpperCase()}
             </div>
           )}
-          <p className="text-sm font-semibold text-[#02090A] truncate">
+          <p className="text-sm font-semibold text-text-primary truncate">
             {displayName}
           </p>
         </div>
 
         {/* Linha 2: Valor + Status */}
-        <p className="text-sm text-[#6B7280] mt-1">
+        <p className="text-sm text-text-secondary mt-1">
           {formatCurrencyShort(Number(nota.valor))} · {getStatusText()}
         </p>
 
         {/* Linha 3: Última ação (só se existir) */}
         {ultimaAcao && (
-          <p className="text-xs text-[#6B7280] mt-2 flex items-center gap-1.5">
+          <p className="text-xs text-text-secondary mt-2 flex items-center gap-1.5">
             {(() => {
               const AcaoIcon = getAcaoIcon(ultimaAcao.tipo)
               return <AcaoIcon className="h-3.5 w-3.5 shrink-0" />
@@ -147,38 +147,42 @@ export function NotaCard({
         {/* Linha 4: Botões lado a lado */}
         {nota.status !== 'pago' && (
           <div className="flex gap-2 mt-3">
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setShowConfirm(true)}
-              className="flex-1 h-10 rounded-full bg-white border border-zinc-300 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
+              className="flex-1"
             >
               Pago ✓
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
               onClick={onCobrar}
-              className="flex-1 h-10 rounded-full bg-black text-white text-sm font-medium hover:bg-zinc-800 transition-colors"
+              className="flex-1"
             >
               Cobrar →
-            </button>
+            </Button>
           </div>
         )}
       </div>
 
       {/* Modal de confirmação */}
       <Modal open={showConfirm} onClose={() => setShowConfirm(false)}>
-        <h3 className="text-lg font-semibold mb-2 text-[#02090A]">Confirmar pagamento?</h3>
-        <p className="text-sm text-[#6B7280] mb-6">
+        <h3 className="text-lg font-semibold mb-2 text-text-primary">Confirmar pagamento?</h3>
+        <p className="text-sm text-text-secondary mb-6">
           {displayName} · {formatCurrencyShort(Number(nota.valor))}
         </p>
         <div className="flex gap-3">
           <Button
             variant="secondary"
-            className="flex-1 h-10 rounded-full"
+            className="flex-1"
             onClick={() => setShowConfirm(false)}
           >
             Cancelar
           </Button>
           <Button
-            className="flex-1 h-10 rounded-full bg-black text-white"
+            className="flex-1"
             onClick={handleConfirmarPago}
           >
             Confirmar ✓

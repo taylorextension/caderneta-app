@@ -5,9 +5,11 @@ import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 
 type ButtonVariant = 'primary' | 'secondary' | 'whatsapp' | 'ghost' | 'danger'
+type ButtonSize = 'default' | 'sm'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
+  size?: ButtonSize
   loading?: boolean
 }
 
@@ -20,8 +22,13 @@ const variantStyles: Record<ButtonVariant, string> = {
   danger: 'bg-red-50 text-red-600 border border-red-200',
 }
 
+const sizeStyles: Record<ButtonSize, string> = {
+  default: 'h-12 px-6',
+  sm: 'h-10 px-4',
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', loading, disabled, children, ...props }, ref) => {
+  ({ className, variant = 'primary', size = 'default', loading, disabled, children, ...props }, ref) => {
     return (
       <motion.button
         ref={ref}
@@ -29,10 +36,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         whileHover={{ scale: 1.01 }}
         transition={{ type: 'spring', stiffness: 400, damping: 17 }}
         className={cn(
-          'h-12 rounded-full px-6 text-sm font-medium transition-colors duration-150',
+          'rounded-full text-sm font-medium transition-colors duration-150',
           'disabled:opacity-40 disabled:pointer-events-none',
           'flex items-center justify-center gap-2',
           variantStyles[variant],
+          sizeStyles[size],
           className
         )}
         disabled={disabled || loading}

@@ -64,7 +64,7 @@ export default function ClientesPage() {
       const result: ClienteComDivida[] = (clientesData || []).map((c) => {
         const notasCliente = (notasData || []).filter((n) => n.cliente_id === c.id)
         const total = notasCliente.reduce((acc, n) => acc + Number(n.valor), 0)
-        
+
         const diasAtraso = notasCliente
           .filter((n) => n.data_vencimento)
           .map((n) => {
@@ -119,10 +119,10 @@ export default function ClientesPage() {
     })
 
   function getStatusDot(c: ClienteComDivida): string {
-    if (c.dias_atraso_max && c.dias_atraso_max > 0) return 'bg-[#EF4444]'
-    if (c.dias_para_vencer !== null) return 'bg-[#EAB308]'
-    if (c.total_pendente > 0) return 'bg-[#EAB308]'
-    return 'bg-[#22C55E]'
+    if (c.dias_atraso_max && c.dias_atraso_max > 0) return 'bg-dot-red'
+    if (c.dias_para_vencer !== null) return 'bg-dot-yellow'
+    if (c.total_pendente > 0) return 'bg-dot-yellow'
+    return 'bg-dot-green'
   }
 
   function getStatusSubtext(c: ClienteComDivida): { text: string; className: string } {
@@ -205,12 +205,12 @@ export default function ClientesPage() {
                   <div className="flex items-center gap-2">
                     {/* Dot de status */}
                     <span className={cn('h-2 w-2 rounded-full shrink-0', getStatusDot(c))} />
-                    
+
                     {/* Avatar */}
                     <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center text-xs font-semibold shrink-0">
                       {(c.nome?.[0] || 'C').toUpperCase()}
                     </div>
-                    
+
                     {/* Nome e info */}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-[#02090A] truncate">
@@ -221,7 +221,7 @@ export default function ClientesPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   {/* Subtexto contextual */}
                   <p className={cn('text-xs mt-1 pl-11', status.className)}>
                     {status.text}

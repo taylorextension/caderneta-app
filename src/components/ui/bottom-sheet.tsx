@@ -64,7 +64,7 @@ export function BottomSheet({ open, onClose, children }: BottomSheetProps) {
               className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
               onPointerDown={(e) => dragControls.start(e)}
             >
-              <div className="w-10 h-1 bg-border rounded-full" />
+              <div className="w-10 h-1 bg-zinc-300 rounded-full" />
             </div>
             <div className="px-4 pb-8">{children}</div>
           </motion.div>
