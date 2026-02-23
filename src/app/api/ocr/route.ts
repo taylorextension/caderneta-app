@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenAI } from '@google/genai'
+import { getGoogleAI } from '@/lib/ai'
 
 const OCR_PROMPT = `Extraia dados de uma nota, recibo ou comprovante brasileiro.
 Responda APENAS com JSON válido (sem markdown).
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '')
     const mimeType = image.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg'
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
+    const ai = getGoogleAI()
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-lite',
@@ -59,8 +59,8 @@ export async function POST(request: NextRequest) {
     const parsed = JSON.parse(cleaned)
 
     return NextResponse.json(parsed)
-  } catch (error) {
-    console.error('OCR error:', error)
+  } catch (error: any) {
+    console.error('OCR error:', error?.message || error)
     return NextResponse.json(
       { error: 'Erro ao processar imagem', descricao: null, data_vencimento: null, total: 0 },
       { status: 200 }
