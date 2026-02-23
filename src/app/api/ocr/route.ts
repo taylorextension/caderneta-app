@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateText } from 'ai'
-import { geminiFlash } from '@/lib/ai'
+import { GoogleGenAI } from '@google/genai'
 
 const OCR_PROMPT = `Extraia dados de uma nota, recibo ou comprovante brasileiro.
 Responda APENAS com JSON válido (sem markdown).
@@ -26,22 +25,35 @@ export async function POST(request: NextRequest) {
     }
 
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '')
+    const mimeType = image.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg'
 
-    const { text } = await generateText({
-      model: geminiFlash(),
-      messages: [
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
         {
           role: 'user',
-          content: [
-            { type: 'text', text: OCR_PROMPT },
+          parts: [
+            { text: OCR_PROMPT },
             {
-              type: 'image',
-              image: base64Data,
+              inlineData: {
+                data: base64Data,
+                mimeType: mimeType,
+              },
             },
           ],
         },
       ],
+      config: {
+        responseMimeType: "application/json",
+      }
     })
+
+    const text = response.text
+    if (!text) {
+      throw new Error("Resposta de texto vazia")
+    }
 
     const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
     const parsed = JSON.parse(cleaned)
