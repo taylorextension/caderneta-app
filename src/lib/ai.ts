@@ -1,4 +1,4 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { GoogleGenAI } from '@google/genai'
 
 function getApiKey(): string {
   const apiKey =
@@ -15,18 +15,11 @@ function getApiKey(): string {
   return apiKey
 }
 
-// Lazy initialization - só cria o cliente quando necessário
-let googleInstance: ReturnType<typeof createGoogleGenerativeAI> | null = null
+let googleInstance: GoogleGenAI | null = null
 
-function getGoogleAI() {
+export function getGoogleAI() {
   if (!googleInstance) {
-    const google = createGoogleGenerativeAI({ apiKey: getApiKey() })
-    googleInstance = google
+    googleInstance = new GoogleGenAI({ apiKey: getApiKey() })
   }
   return googleInstance
-}
-
-// Exporta uma função que retorna o modelo em vez do modelo diretamente
-export function geminiFlash() {
-  return getGoogleAI()('gemini-2.0-flash-lite')
 }

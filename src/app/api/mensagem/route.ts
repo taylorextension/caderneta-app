@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateText } from 'ai'
-import { geminiFlash } from '@/lib/ai'
+import { getGoogleAI } from '@/lib/ai'
 import type { MensagemRequest } from '@/types/api'
 
 function buildPrompt(data: MensagemRequest): string {
@@ -128,18 +127,24 @@ export async function POST(request: NextRequest) {
     const prompt = buildPrompt(data)
 
     try {
-      const result = await generateText({
-        model: geminiFlash(),
-        prompt: prompt,
-        temperature: 0.8,
-        maxTokens: 200,
+      const ai = getGoogleAI()
+
+      const result = await ai.models.generateContent({
+        model: 'gemini-flash-lite-latest',
+        contents: prompt,
+        config: {
+          temperature: 0.8,
+          maxOutputTokens: 200,
+        }
       })
 
-      if (!result.text || result.text.trim().length < 10) {
+      const text = result.text
+
+      if (!text || text.trim().length < 10) {
         throw new Error('Resposta vazia ou muito curta')
       }
 
-      return NextResponse.json({ mensagem: result.text.trim() })
+      return NextResponse.json({ mensagem: text.trim() })
     } catch (aiError) {
       console.error('Erro da IA:', aiError)
       throw aiError
