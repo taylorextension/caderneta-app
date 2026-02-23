@@ -41,10 +41,10 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-[100] bg-white/95 backdrop-blur-md border-t border-divider"
+      className="fixed bottom-0 left-0 right-0 z-[100] bg-[#F1F1EF] border-t border-divider"
       style={{ position: 'fixed', bottom: 0, left: 0, right: 0 }}
     >
-      <div className="flex items-center h-[72px]">
+      <div className="relative flex items-center h-[72px]">
         {items.map((item) => {
           const active = pathname.startsWith(item.href)
           const Icon = active ? item.activeIcon : item.icon
@@ -57,6 +57,13 @@ export function BottomNav() {
                 active ? 'text-black' : 'text-text-muted'
               )}
             >
+              {active && (
+                <motion.div
+                  layoutId="nav-indicator"
+                  className="absolute -top-[9px] left-1/2 -translate-x-1/2 w-10 h-[3px] bg-black rounded-full"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
               <motion.div
                 animate={{ scale: active ? 1.12 : 1 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 20 }}
@@ -71,13 +78,6 @@ export function BottomNav() {
               >
                 {item.label}
               </span>
-              {active && (
-                <motion.div
-                  layoutId="nav-indicator"
-                  className="absolute -top-[1px] left-1/2 -translate-x-1/2 w-8 h-[3px] bg-black rounded-full"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-              )}
             </Link>
           )
         })}
