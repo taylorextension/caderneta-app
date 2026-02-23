@@ -102,6 +102,7 @@ export default function RedefinirSenhaPage() {
                     </p>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        <input type="email" name="email" autoComplete="username" className="hidden" tabIndex={-1} aria-hidden="true" />
                         <Input
                             label="Nova senha"
                             type="password"
