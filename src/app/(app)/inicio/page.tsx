@@ -446,7 +446,7 @@ export default function InicioPage() {
                 <div className="flex items-center gap-2 mb-3">
                   <span className="h-2 w-2 rounded-full bg-dot-green" />
                   <h2 className="text-sm font-semibold text-text-primary">
-                    Recebido hoje
+                    Recebido
                   </h2>
                 </div>
                 <Card className="divide-y divide-divider">

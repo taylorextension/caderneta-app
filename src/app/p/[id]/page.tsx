@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { gerarBRCode, gerarQRDataURL, validarBRCode } from '@/lib/pix'
+import { gerarBRCode, validarBRCode } from '@/lib/pix'
 import { formatCurrencyShort } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -95,14 +95,10 @@ export default function PublicPage() {
 
           setBrCode(code)
 
-          const qr = await gerarQRDataURL({
-            chave: chavePix,
-            nome: nomeRecebedor,
-            cidade: cidadeRecebedor,
-            valor: Number(notaData.valor) > 0 ? Number(notaData.valor) : undefined,
-            txid: id.substring(0, 25),
-          })
-          setQrUrl(qr)
+          // Use a public API to generate the QR Code securely instead of running qrcode library 
+          // which is causing client module instantiation errors ("Buffer is not defined") on some browsers
+          const encodedCode = encodeURIComponent(code)
+          setQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodedCode}`)
         } catch (pixError) {
           console.error('Erro ao gerar Pix:', pixError)
         }
@@ -122,12 +118,38 @@ export default function PublicPage() {
 
   async function handleCopyPix() {
     if (!brCode || !nota) return
+
+    // Try modern clipboard API first, fall back to textarea method
+    let copySuccess = false
     try {
       await navigator.clipboard.writeText(brCode)
+      copySuccess = true
+    } catch {
+      // Fallback for mobile browsers without clipboard API (HTTP context)
+      try {
+        const textarea = document.createElement('textarea')
+        textarea.value = brCode
+        textarea.style.position = 'fixed'
+        textarea.style.left = '-9999px'
+        textarea.style.top = '-9999px'
+        document.body.appendChild(textarea)
+        textarea.focus()
+        textarea.select()
+        copySuccess = document.execCommand('copy')
+        document.body.removeChild(textarea)
+      } catch {
+        // Both methods failed
+      }
+    }
+
+    if (copySuccess) {
       setCopied(true)
       setTimeout(() => setCopied(false), 3000)
+    }
 
-      fetch('/api/eventos', {
+    // Always track the event regardless of copy success
+    try {
+      await fetch('/api/eventos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -138,7 +160,7 @@ export default function PublicPage() {
         }),
       })
     } catch {
-      // Clipboard failed silently
+      // Event tracking failed silently
     }
   }
 

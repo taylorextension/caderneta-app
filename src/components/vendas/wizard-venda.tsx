@@ -34,6 +34,7 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
   const [novoTelefone, setNovoTelefone] = useState('')
   const [descricao, setDescricao] = useState('')
   const [valor, setValor] = useState('')
+  const [valorDisplay, setValorDisplay] = useState('')
   const [itens, setItens] = useState<ItemNota[]>([])
   const [showItens, setShowItens] = useState(false)
   const [vencimento, setVencimento] = useState<string | null>(null)
@@ -112,6 +113,7 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
       const parsedTotal = Number(data.total)
       if (parsedTotal > 0) {
         setValor(parsedTotal.toFixed(2))
+        setValorDisplay(formatCurrencyInput(parsedTotal.toFixed(2).replace('.', '')))
         hasData = true
       }
 
@@ -153,6 +155,26 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
     setItens(updated)
     const total = updated.reduce((acc, item) => acc + item.quantidade * item.valor_unitario, 0)
     setValor(total.toFixed(2))
+    setValorDisplay(formatCurrencyInput(total.toFixed(2).replace('.', '')))
+  }
+
+  function formatCurrencyInput(rawValue: string) {
+    const numbersOnly = rawValue.replace(/\D/g, '')
+    if (!numbersOnly) return ''
+    const amount = (parseInt(numbersOnly, 10) / 100).toFixed(2)
+    return amount.replace('.', ',')
+  }
+
+  function handleValorChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const numbersOnly = e.target.value.replace(/\D/g, '')
+    if (!numbersOnly) {
+      setValor('')
+      setValorDisplay('')
+      return
+    }
+    const amount = (parseInt(numbersOnly, 10) / 100).toFixed(2)
+    setValor(amount)
+    setValorDisplay(amount.replace('.', ','))
   }
 
   function toISODateLocal(date: Date) {
@@ -339,9 +361,9 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
               <div className="mt-4">
                 <Input
                   label="Valor total (R$)"
-                  inputMode="decimal"
-                  value={valor}
-                  onChange={(e) => setValor(e.target.value)}
+                  inputMode="numeric"
+                  value={valorDisplay}
+                  onChange={handleValorChange}
                   placeholder="0,00"
                 />
               </div>
