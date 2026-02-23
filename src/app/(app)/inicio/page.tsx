@@ -335,6 +335,35 @@ export default function InicioPage() {
     }
   }, [profile, addToast, fetchData])
 
+  const handleEditNota = useCallback(async (notaId: string, data: { descricao: string; valor: string; data_vencimento: string }) => {
+    if (!profile) return
+    try {
+      const supabase = createClient()
+      await supabase
+        .from('notas')
+        .update({
+          descricao: data.descricao || null,
+          valor: parseFloat(data.valor) || 0,
+          data_vencimento: data.data_vencimento || null,
+        })
+        .eq('id', notaId)
+      fetchData()
+    } catch {
+      addToast({ message: 'Erro ao atualizar nota', type: 'error' })
+    }
+  }, [profile, addToast, fetchData])
+
+  const handleDeleteNota = useCallback(async (notaId: string) => {
+    if (!profile) return
+    try {
+      const supabase = createClient()
+      await supabase.from('notas').delete().eq('id', notaId)
+      fetchData()
+    } catch {
+      addToast({ message: 'Erro ao excluir nota', type: 'error' })
+    }
+  }, [profile, addToast, fetchData])
+
   if (loading) {
     return (
       <div className="p-6 space-y-4">
@@ -406,6 +435,8 @@ export default function InicioPage() {
                       showAvatar={true}
                       onCobrar={() => setCobrarNotas([nota])}
                       onMarcarPago={() => handleMarcarPago(nota)}
+                      onEdit={handleEditNota}
+                      onDelete={handleDeleteNota}
                     />
                   ))}
                 </Card>
@@ -435,6 +466,8 @@ export default function InicioPage() {
                       showAvatar={true}
                       onCobrar={() => setCobrarNotas([nota])}
                       onMarcarPago={() => handleMarcarPago(nota)}
+                      onEdit={handleEditNota}
+                      onDelete={handleDeleteNota}
                     />
                   ))}
                 </Card>

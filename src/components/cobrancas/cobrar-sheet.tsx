@@ -9,6 +9,7 @@ import { useUIStore } from '@/stores/ui-store'
 import { createClient } from '@/lib/supabase/client'
 import { openWhatsApp } from '@/lib/whatsapp'
 import { formatCurrencyShort } from '@/lib/format'
+import { fetchWithRetry } from '@/lib/retry'
 import type { NotaComCliente } from '@/types/database'
 
 interface CobrarSheetProps {
@@ -38,7 +39,7 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
     if (!profile || notas.length === 0) return
     try {
       setLoading(true)
-      const res = await fetch('/api/mensagem', {
+      const res = await fetchWithRetry('/api/mensagem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

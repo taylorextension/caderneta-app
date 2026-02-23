@@ -9,10 +9,14 @@ import { PageTransition } from '@/components/layout/page-transition'
 import { FAB } from '@/components/layout/fab'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Modal } from '@/components/ui/modal'
+import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { CobrarSheet } from '@/components/cobrancas/cobrar-sheet'
 import { NotaCard } from '@/components/notas/nota-card'
-import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/solid'
+import { PhoneInput } from '@/components/ui/phone-input'
+import { ArrowLeftIcon, CheckIcon, PencilIcon } from '@heroicons/react/24/solid'
 import { formatCurrencyShort, formatRelativeDate } from '@/lib/format'
 import type { Cliente, Nota, NotaComCliente } from '@/types/database'
 
@@ -37,6 +41,13 @@ export default function ClienteDetailPage() {
   const [cobrarNotas, setCobrarNotas] = useState<NotaComCliente[]>([])
   const [showWizard, setShowWizard] = useState(false)
 
+  // Client edit state
+  const [showEditCliente, setShowEditCliente] = useState(false)
+  const [editNome, setEditNome] = useState('')
+  const [editApelido, setEditApelido] = useState('')
+  const [editTelefone, setEditTelefone] = useState('')
+  const [showDeleteCliente, setShowDeleteCliente] = useState(false)
+
   const totalPendente = pendentes.reduce((acc, n) => acc + Number(n.valor), 0)
   const totalPago = pagas.reduce((acc, n) => acc + Number(n.valor), 0)
 
@@ -46,7 +57,6 @@ export default function ClienteDetailPage() {
       setLoading(true)
       const supabase = createClient()
 
-      // Buscar cliente
       const { data: clienteData, error: clienteError } = await supabase
         .from('clientes')
         .select('*')
@@ -56,7 +66,6 @@ export default function ClienteDetailPage() {
       if (clienteError) throw clienteError
       setCliente(clienteData)
 
-      // Buscar notas pendentes com última ação
       const { data: pendentesData } = await supabase
         .from('notas')
         .select(`
@@ -67,20 +76,18 @@ export default function ClienteDetailPage() {
         .eq('status', 'pendente')
         .order('data_vencimento', { ascending: true })
 
-      // Processar pendentes - extrair só a última ação
       const pendentesComAcao = (pendentesData || []).map((nota: any) => {
         const eventos = nota.eventos || []
         const ultimaAcao = eventos.length > 0
-          ? eventos.sort((a: any, b: any) => 
-              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            )[0]
+          ? eventos.sort((a: any, b: any) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )[0]
           : null
         return { ...nota, ultimaAcao }
       })
 
       setPendentes(pendentesComAcao)
 
-      // Buscar notas pagas (sem eventos)
       const { data: pagasData } = await supabase
         .from('notas')
         .select('*')
@@ -99,6 +106,20 @@ export default function ClienteDetailPage() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  // Realtime subscription
+  useEffect(() => {
+    if (!profile) return
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`cliente-${id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notas', filter: `cliente_id=eq.${id}` }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'eventos', filter: `cliente_id=eq.${id}` }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cobrancas', filter: `cliente_id=eq.${id}` }, () => fetchData())
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [profile, id, fetchData])
 
   const handleMarcarPago = useCallback(async (nota: Nota) => {
     if (!profile) return
@@ -143,6 +164,79 @@ export default function ClienteDetailPage() {
     }
   }, [profile, id, addToast, fetchData])
 
+  const handleEditNota = useCallback(async (notaId: string, data: { descricao: string; valor: string; data_vencimento: string }) => {
+    if (!profile) return
+    try {
+      const supabase = createClient()
+      await supabase
+        .from('notas')
+        .update({
+          descricao: data.descricao || null,
+          valor: parseFloat(data.valor) || 0,
+          data_vencimento: data.data_vencimento || null,
+        })
+        .eq('id', notaId)
+      fetchData()
+    } catch {
+      addToast({ message: 'Erro ao atualizar nota', type: 'error' })
+    }
+  }, [profile, addToast, fetchData])
+
+  const handleDeleteNota = useCallback(async (notaId: string) => {
+    if (!profile) return
+    try {
+      const supabase = createClient()
+      await supabase.from('notas').delete().eq('id', notaId)
+      fetchData()
+    } catch {
+      addToast({ message: 'Erro ao excluir nota', type: 'error' })
+    }
+  }, [profile, addToast, fetchData])
+
+  const handleEditCliente = async () => {
+    if (!profile || !cliente) return
+    try {
+      const supabase = createClient()
+      await supabase
+        .from('clientes')
+        .update({
+          nome: editNome,
+          apelido: editApelido || null,
+          telefone: editTelefone,
+        })
+        .eq('id', cliente.id)
+      setShowEditCliente(false)
+      addToast({ message: 'Cliente atualizado', type: 'success' })
+      fetchData()
+    } catch {
+      addToast({ message: 'Erro ao atualizar cliente', type: 'error' })
+    }
+  }
+
+  const handleDeleteCliente = async () => {
+    if (!profile || !cliente) return
+    try {
+      const supabase = createClient()
+      await supabase
+        .from('clientes')
+        .update({ ativo: false })
+        .eq('id', cliente.id)
+      setShowDeleteCliente(false)
+      addToast({ message: 'Cliente excluído', type: 'info' })
+      router.push('/clientes')
+    } catch {
+      addToast({ message: 'Erro ao excluir cliente', type: 'error' })
+    }
+  }
+
+  const openEditCliente = () => {
+    if (!cliente) return
+    setEditNome(cliente.nome)
+    setEditApelido(cliente.apelido || '')
+    setEditTelefone(cliente.telefone)
+    setShowEditCliente(true)
+  }
+
   const notaToComCliente = useCallback((nota: Nota): NotaComCliente => {
     const hoje = new Date()
     const venc = nota.data_vencimento
@@ -175,7 +269,6 @@ export default function ClienteDetailPage() {
     }
   }, [pendentes, notaToComCliente])
 
-  // Verificar se tem nota vencida
   const temVencida = pendentes.some(n => {
     if (!n.data_vencimento) return false
     return new Date(n.data_vencimento + 'T00:00:00') < new Date()
@@ -206,7 +299,15 @@ export default function ClienteDetailPage() {
           Clientes
         </button>
 
-        <h1 className="text-xl font-semibold text-[#02090A]">{cliente.nome}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-semibold text-[#02090A] flex-1">{cliente.nome}</h1>
+          <button
+            onClick={openEditCliente}
+            className="shrink-0 h-8 w-8 flex items-center justify-center rounded-full hover:bg-black/5 transition-colors"
+          >
+            <PencilIcon className="h-4 w-4 text-text-muted" />
+          </button>
+        </div>
         {cliente.apelido && (
           <p className="text-sm text-[#6B7280]">{cliente.apelido}</p>
         )}
@@ -269,6 +370,8 @@ export default function ClienteDetailPage() {
                   showAvatar={false}
                   onCobrar={() => setCobrarNotas([notaToComCliente(nota)])}
                   onMarcarPago={() => handleMarcarPago(nota)}
+                  onEdit={handleEditNota}
+                  onDelete={handleDeleteNota}
                 />
               ))}
             </Card>
@@ -326,6 +429,62 @@ export default function ClienteDetailPage() {
           preselectedClienteId={id}
         />
       )}
+
+      {/* Edit Client BottomSheet */}
+      <BottomSheet open={showEditCliente} onClose={() => setShowEditCliente(false)}>
+        <h3 className="text-lg font-semibold mb-4">Editar cliente</h3>
+        <div className="space-y-4">
+          <Input
+            label="Nome"
+            value={editNome}
+            onChange={(e) => setEditNome(e.target.value)}
+            placeholder="Nome do cliente"
+          />
+          <Input
+            label="Apelido (opcional)"
+            value={editApelido}
+            onChange={(e) => setEditApelido(e.target.value)}
+            placeholder="Como você chama ele/a"
+          />
+          <PhoneInput
+            label="Telefone"
+            value={editTelefone}
+            onChange={setEditTelefone}
+          />
+        </div>
+        <Button onClick={handleEditCliente} className="w-full mt-6">
+          Salvar alterações
+        </Button>
+        <button
+          onClick={() => setShowDeleteCliente(true)}
+          className="w-full mt-3 h-12 text-sm font-medium text-red-500"
+        >
+          Excluir cliente
+        </button>
+      </BottomSheet>
+
+      {/* Delete Client Confirmation */}
+      <Modal open={showDeleteCliente} onClose={() => setShowDeleteCliente(false)}>
+        <h3 className="text-lg font-semibold mb-2 text-text-primary">Excluir cliente?</h3>
+        <p className="text-sm text-text-secondary mb-6">
+          O cliente será removido da sua lista. As notas serão mantidas.
+        </p>
+        <div className="flex gap-3">
+          <Button
+            variant="secondary"
+            className="flex-1"
+            onClick={() => setShowDeleteCliente(false)}
+          >
+            Cancelar
+          </Button>
+          <Button
+            className="flex-1 !bg-red-500 !text-white"
+            onClick={handleDeleteCliente}
+          >
+            Excluir
+          </Button>
+        </div>
+      </Modal>
     </PageTransition>
   )
 }

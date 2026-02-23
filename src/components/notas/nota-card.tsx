@@ -1,12 +1,15 @@
 import { useState, type ComponentType } from 'react'
 import { formatCurrencyShort } from '@/lib/format'
 import { Modal } from '@/components/ui/modal'
+import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useUIStore } from '@/stores/ui-store'
 import {
   ClipboardDocumentCheckIcon,
   EyeIcon,
   PaperAirplaneIcon,
+  PencilIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline'
 
@@ -33,6 +36,8 @@ interface NotaCardProps {
   showAvatar?: boolean
   onCobrar: () => void
   onMarcarPago: () => void
+  onEdit?: (id: string, data: { descricao: string; valor: string; data_vencimento: string }) => void
+  onDelete?: (id: string) => void
 }
 
 export function NotaCard({
@@ -42,8 +47,15 @@ export function NotaCard({
   showAvatar = true,
   onCobrar,
   onMarcarPago,
+  onEdit,
+  onDelete,
 }: NotaCardProps) {
   const [showConfirm, setShowConfirm] = useState(false)
+  const [showEditSheet, setShowEditSheet] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [editDescricao, setEditDescricao] = useState(nota.descricao || '')
+  const [editValor, setEditValor] = useState(String(Number(nota.valor).toFixed(2)).replace('.', ','))
+  const [editVencimento, setEditVencimento] = useState(nota.data_vencimento || '')
   const addToast = useUIStore((s) => s.addToast)
 
   const hoje = new Date()
@@ -111,21 +123,49 @@ export function NotaCard({
     })
   }
 
+  const handleSaveEdit = () => {
+    if (!onEdit) return
+    const valorNum = editValor.replace(',', '.')
+    onEdit(nota.id, {
+      descricao: editDescricao,
+      valor: valorNum,
+      data_vencimento: editVencimento,
+    })
+    setShowEditSheet(false)
+    addToast({ message: 'Nota atualizada', type: 'success' })
+  }
+
+  const handleDeleteNota = () => {
+    if (!onDelete) return
+    onDelete(nota.id)
+    setShowDeleteConfirm(false)
+    setShowEditSheet(false)
+    addToast({ message: 'Nota excluída', type: 'info' })
+  }
+
   const displayName = cliente.apelido || cliente.nome
 
   return (
     <>
       <div className="p-4">
-        {/* Linha 1: Avatar + Nome */}
+        {/* Linha 1: Avatar + Nome + Edit */}
         <div className="flex items-center gap-3">
           {showAvatar && (
             <div className="h-10 w-10 rounded-full bg-black text-white flex items-center justify-center text-sm font-semibold shrink-0">
               {(cliente.nome?.[0] || 'C').toUpperCase()}
             </div>
           )}
-          <p className="text-sm font-semibold text-text-primary truncate">
+          <p className="text-sm font-semibold text-text-primary truncate flex-1">
             {displayName}
           </p>
+          {(onEdit || onDelete) && (
+            <button
+              onClick={() => setShowEditSheet(true)}
+              className="shrink-0 h-8 w-8 flex items-center justify-center rounded-full hover:bg-black/5 transition-colors"
+            >
+              <PencilIcon className="h-4 w-4 text-text-muted" />
+            </button>
+          )}
         </div>
 
         {/* Linha 2: Valor + Status */}
@@ -167,7 +207,7 @@ export function NotaCard({
         )}
       </div>
 
-      {/* Modal de confirmação */}
+      {/* Modal de confirmação de pagamento */}
       <Modal open={showConfirm} onClose={() => setShowConfirm(false)}>
         <h3 className="text-lg font-semibold mb-2 text-text-primary">Confirmar pagamento?</h3>
         <p className="text-sm text-text-secondary mb-6">
@@ -186,6 +226,69 @@ export function NotaCard({
             onClick={handleConfirmarPago}
           >
             Confirmar ✓
+          </Button>
+        </div>
+      </Modal>
+
+      {/* BottomSheet de edição */}
+      <BottomSheet open={showEditSheet} onClose={() => setShowEditSheet(false)}>
+        <h3 className="text-lg font-semibold mb-4">Editar nota</h3>
+        <div className="space-y-4">
+          <Input
+            label="Descrição"
+            value={editDescricao}
+            onChange={(e) => setEditDescricao(e.target.value)}
+            placeholder="Ex: Compra da semana"
+          />
+          <Input
+            label="Valor (R$)"
+            inputMode="numeric"
+            value={editValor}
+            onChange={(e) => {
+              const numbersOnly = e.target.value.replace(/\D/g, '')
+              if (!numbersOnly) { setEditValor(''); return }
+              const amount = (parseInt(numbersOnly, 10) / 100).toFixed(2)
+              setEditValor(amount.replace('.', ','))
+            }}
+            placeholder="0,00"
+          />
+          <Input
+            label="Data de vencimento"
+            type="date"
+            value={editVencimento}
+            onChange={(e) => setEditVencimento(e.target.value)}
+          />
+        </div>
+        <Button onClick={handleSaveEdit} className="w-full mt-6">
+          Salvar alterações
+        </Button>
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="w-full mt-3 h-12 text-sm font-medium text-red-500"
+        >
+          Excluir nota
+        </button>
+      </BottomSheet>
+
+      {/* Modal de confirmação de exclusão */}
+      <Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+        <h3 className="text-lg font-semibold mb-2 text-text-primary">Excluir nota?</h3>
+        <p className="text-sm text-text-secondary mb-6">
+          Esta ação não pode ser desfeita.
+        </p>
+        <div className="flex gap-3">
+          <Button
+            variant="secondary"
+            className="flex-1"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            Cancelar
+          </Button>
+          <Button
+            className="flex-1 !bg-red-500 !text-white"
+            onClick={handleDeleteNota}
+          >
+            Excluir
           </Button>
         </div>
       </Modal>

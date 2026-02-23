@@ -13,6 +13,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { useCamera } from '@/hooks/use-camera'
+import { fetchWithRetry } from '@/lib/retry'
 import type { Cliente, ItemNota } from '@/types/database'
 
 interface WizardVendaProps {
@@ -102,7 +103,7 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
   async function handleOCR(base64: string) {
     try {
       setOcrLoading(true)
-      const res = await fetch('/api/ocr', {
+      const res = await fetchWithRetry('/api/ocr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64 }),
