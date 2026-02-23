@@ -56,7 +56,7 @@ export default function InicioPage() {
           if (!acoesMap.has(c.nota_id)) {
             acoesMap.set(c.nota_id, {
               tipo: 'lembrete_enviado',
-              created_at: c.enviado_em,
+              created_at: c.created_at,
             })
           }
         })

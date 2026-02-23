@@ -26,18 +26,14 @@ export default function PublicPage() {
   const fetchNota = useCallback(async () => {
     try {
       setLoading(true)
-      const supabase = createClient()
 
-      const { data, error } = await supabase
-        .from('notas')
-        .select('*, profiles!notas_user_id_fkey(nome_loja, pix_chave, pix_tipo, pix_nome, pix_cidade)')
-        .eq('id', id)
-        .single()
-
-      if (error || !data) {
+      const res = await fetch(`/api/nota/${id}`)
+      if (!res.ok) {
         setNotFound(true)
         return
       }
+
+      const data = await res.json()
 
       const notaData = data as unknown as NotaComProfile
       setNota(notaData)
@@ -77,12 +73,12 @@ export default function PublicPage() {
         const chavePix = notaData.profiles.pix_chave.trim()
         const nomeRecebedor = (notaData.profiles.pix_nome || notaData.profiles.nome_loja || 'LOJISTA').trim()
         const cidadeRecebedor = (notaData.profiles.pix_cidade || 'SAO PAULO').trim()
-        
-        console.log('Gerando Pix:', { 
-          chave: chavePix, 
-          nome: nomeRecebedor, 
-          cidade: cidadeRecebedor, 
-          valor: notaData.valor 
+
+        console.log('Gerando Pix:', {
+          chave: chavePix,
+          nome: nomeRecebedor,
+          cidade: cidadeRecebedor,
+          valor: notaData.valor
         })
 
         try {
@@ -93,10 +89,10 @@ export default function PublicPage() {
             valor: Number(notaData.valor) > 0 ? Number(notaData.valor) : undefined,
             txid: id.substring(0, 25),
           })
-          
+
           console.log('BRCode gerado:', code)
           console.log('BRCode válido?', validarBRCode(code))
-          
+
           setBrCode(code)
 
           const qr = await gerarQRDataURL({
@@ -243,7 +239,7 @@ export default function PublicPage() {
                 >
                   {copied ? 'Copiado ✓' : 'Copiar código Pix'}
                 </Button>
-                
+
                 <p className="text-xs text-text-muted text-center mt-3">
                   Se o QR Code não funcionar, use a chave: {nota.profiles.pix_chave}
                 </p>

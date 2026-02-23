@@ -99,6 +99,15 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
           .from('notas')
           .update({ vezes_cobrado: nota.vezes_cobrado + 1 })
           .eq('id', nota.id)
+
+        await supabase
+          .from('eventos')
+          .insert({
+            nota_id: nota.id,
+            cliente_id: cliente.cliente_id,
+            user_id: profile.id,
+            tipo: 'lembrete_enviado'
+          })
       }
 
       addToast({ message: 'Cobrança registrada', type: 'success' })
