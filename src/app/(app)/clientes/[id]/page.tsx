@@ -352,29 +352,30 @@ export default function ClienteDetailPage() {
                 Pendentes · {pendentes.length}
               </h3>
             </div>
-            <Card className="divide-y divide-[#E5E5E5]">
+            <div className="space-y-3">
               {pendentes.map((nota: any) => (
-                <NotaCard
-                  key={nota.id}
-                  nota={{
-                    ...nota,
-                    status: nota.status as 'pendente' | 'pago',
-                  }}
-                  cliente={{
-                    id: cliente.id,
-                    nome: cliente.nome,
-                    apelido: cliente.apelido,
-                    telefone: cliente.telefone,
-                  }}
-                  ultimaAcao={nota.ultimaAcao}
-                  showAvatar={false}
-                  onCobrar={() => setCobrarNotas([notaToComCliente(nota)])}
-                  onMarcarPago={() => handleMarcarPago(nota)}
-                  onEdit={handleEditNota}
-                  onDelete={handleDeleteNota}
-                />
+                <Card key={nota.id}>
+                  <NotaCard
+                    nota={{
+                      ...nota,
+                      status: nota.status as 'pendente' | 'pago',
+                    }}
+                    cliente={{
+                      id: cliente.id,
+                      nome: cliente.nome,
+                      apelido: cliente.apelido,
+                      telefone: cliente.telefone,
+                    }}
+                    ultimaAcao={nota.ultimaAcao}
+                    showAvatar={false}
+                    onCobrar={() => setCobrarNotas([notaToComCliente(nota)])}
+                    onMarcarPago={() => handleMarcarPago(nota)}
+                    onEdit={handleEditNota}
+                    onDelete={handleDeleteNota}
+                  />
+                </Card>
               ))}
-            </Card>
+            </div>
           </section>
         )}
 

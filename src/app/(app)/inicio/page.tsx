@@ -420,26 +420,27 @@ export default function InicioPage() {
                     Vencidas · {data.vencidas.length}
                   </h2>
                 </div>
-                <Card className="divide-y divide-divider">
+                <div className="space-y-3">
                   {data.vencidas.map((nota) => (
-                    <NotaCard
-                      key={nota.id}
-                      nota={nota}
-                      cliente={{
-                        id: nota.cliente_id,
-                        nome: nota.cliente_nome,
-                        apelido: nota.apelido,
-                        telefone: nota.cliente_telefone,
-                      }}
-                      ultimaAcao={ultimasAcoes.get(nota.id)}
-                      showAvatar={true}
-                      onCobrar={() => setCobrarNotas([nota])}
-                      onMarcarPago={() => handleMarcarPago(nota)}
-                      onEdit={handleEditNota}
-                      onDelete={handleDeleteNota}
-                    />
+                    <Card key={nota.id}>
+                      <NotaCard
+                        nota={nota}
+                        cliente={{
+                          id: nota.cliente_id,
+                          nome: nota.cliente_nome,
+                          apelido: nota.apelido,
+                          telefone: nota.cliente_telefone,
+                        }}
+                        ultimaAcao={ultimasAcoes.get(nota.id)}
+                        showAvatar={true}
+                        onCobrar={() => setCobrarNotas([nota])}
+                        onMarcarPago={() => handleMarcarPago(nota)}
+                        onEdit={handleEditNota}
+                        onDelete={handleDeleteNota}
+                      />
+                    </Card>
                   ))}
-                </Card>
+                </div>
               </div>
             )}
 
@@ -451,26 +452,27 @@ export default function InicioPage() {
                     Vence em breve · {data.vencendo.length}
                   </h2>
                 </div>
-                <Card className="divide-y divide-divider">
+                <div className="space-y-3">
                   {data.vencendo.map((nota) => (
-                    <NotaCard
-                      key={nota.id}
-                      nota={nota}
-                      cliente={{
-                        id: nota.cliente_id,
-                        nome: nota.cliente_nome,
-                        apelido: nota.apelido,
-                        telefone: nota.cliente_telefone,
-                      }}
-                      ultimaAcao={ultimasAcoes.get(nota.id)}
-                      showAvatar={true}
-                      onCobrar={() => setCobrarNotas([nota])}
-                      onMarcarPago={() => handleMarcarPago(nota)}
-                      onEdit={handleEditNota}
-                      onDelete={handleDeleteNota}
-                    />
+                    <Card key={nota.id}>
+                      <NotaCard
+                        nota={nota}
+                        cliente={{
+                          id: nota.cliente_id,
+                          nome: nota.cliente_nome,
+                          apelido: nota.apelido,
+                          telefone: nota.cliente_telefone,
+                        }}
+                        ultimaAcao={ultimasAcoes.get(nota.id)}
+                        showAvatar={true}
+                        onCobrar={() => setCobrarNotas([nota])}
+                        onMarcarPago={() => handleMarcarPago(nota)}
+                        onEdit={handleEditNota}
+                        onDelete={handleDeleteNota}
+                      />
+                    </Card>
                   ))}
-                </Card>
+                </div>
               </div>
             )}
 

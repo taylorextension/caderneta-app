@@ -259,7 +259,7 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
         itens: itens.length > 0 ? itens : [],
         valor: valorNum,
         data_vencimento: vencimentoCustom || vencimento,
-        status: isAVista ? 'paga' : 'pendente',
+        status: isAVista ? 'pago' : 'pendente',
         data_pagamento: isAVista ? new Date().toISOString() : null,
       })
       if (error) throw error

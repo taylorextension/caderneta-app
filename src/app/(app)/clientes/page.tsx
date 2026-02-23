@@ -192,44 +192,45 @@ export default function ClientesPage() {
             onAction={() => setShowWizard(true)}
           />
         ) : (
-          <Card className="divide-y divide-[#E5E5E5]">
+          <div className="space-y-3">
             {filtered.map((c) => {
               const status = getStatusSubtext(c)
               return (
-                <motion.button
-                  key={c.id}
-                  onClick={() => router.push(`/clientes/${c.id}`)}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full py-3 text-left"
-                >
-                  <div className="flex items-center gap-2">
-                    {/* Dot de status */}
-                    <span className={cn('h-2 w-2 rounded-full shrink-0', getStatusDot(c))} />
+                <Card key={c.id}>
+                  <motion.button
+                    onClick={() => router.push(`/clientes/${c.id}`)}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full py-1 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      {/* Dot de status */}
+                      <span className={cn('h-2 w-2 rounded-full shrink-0', getStatusDot(c))} />
 
-                    {/* Avatar */}
-                    <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center text-xs font-semibold shrink-0">
-                      {(c.nome?.[0] || 'C').toUpperCase()}
+                      {/* Avatar */}
+                      <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center text-xs font-semibold shrink-0">
+                        {(c.nome?.[0] || 'C').toUpperCase()}
+                      </div>
+
+                      {/* Nome e info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[#02090A] truncate">
+                          {c.nome}
+                        </p>
+                        <p className="text-sm text-[#6B7280]">
+                          {formatCurrencyShort(c.total_pendente)} · {c.notas_pendentes} nota{c.notas_pendentes > 1 ? 's' : ''}
+                        </p>
+                      </div>
                     </div>
 
-                    {/* Nome e info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#02090A] truncate">
-                        {c.nome}
-                      </p>
-                      <p className="text-sm text-[#6B7280]">
-                        {formatCurrencyShort(c.total_pendente)} · {c.notas_pendentes} nota{c.notas_pendentes > 1 ? 's' : ''}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Subtexto contextual */}
-                  <p className={cn('text-xs mt-1 pl-11', status.className)}>
-                    {status.text}
-                  </p>
-                </motion.button>
+                    {/* Subtexto contextual */}
+                    <p className={cn('text-xs mt-1 pl-11', status.className)}>
+                      {status.text}
+                    </p>
+                  </motion.button>
+                </Card>
               )
             })}
-          </Card>
+          </div>
         )}
       </div>
 
