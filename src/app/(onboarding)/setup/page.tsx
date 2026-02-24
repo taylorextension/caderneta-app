@@ -180,7 +180,7 @@ export default function SetupPage() {
 
   return (
     <div className="min-h-screen flex flex-col justify-center px-6 py-12">
-      <div className="w-full max-w-sm mx-auto">
+      <div className="w-full max-w-sm lg:max-w-md mx-auto">
         <div className="flex justify-center gap-2 mb-8">
           {[1, 2, 3].map((s) => (
             <div

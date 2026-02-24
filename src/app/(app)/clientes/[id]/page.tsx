@@ -289,7 +289,7 @@ export default function ClienteDetailPage() {
 
   return (
     <PageTransition>
-      <div className="p-6">
+      <div className="p-6 lg:px-0 lg:py-8">
         {/* Header */}
         <button
           onClick={() => router.back()}
@@ -300,7 +300,7 @@ export default function ClienteDetailPage() {
         </button>
 
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-semibold text-[#02090A] flex-1">{cliente.nome}</h1>
+          <h1 className="text-xl lg:text-2xl font-semibold text-[#02090A] flex-1">{cliente.nome}</h1>
           <button
             onClick={openEditCliente}
             className="shrink-0 px-2.5 py-1 rounded-full bg-black/5 text-[11px] font-medium text-text-secondary hover:bg-black/10 transition-colors"
@@ -343,70 +343,73 @@ export default function ClienteDetailPage() {
           </Button>
         </div>
 
-        {/* Seção Pendentes */}
-        {pendentes.length > 0 && (
-          <section className="mt-8">
-            <div className="flex items-center gap-2 mb-3">
-              <div className={`w-2 h-2 rounded-full ${temVencida ? 'bg-[#EF4444]' : 'bg-[#EAB308]'}`} />
-              <h3 className="text-sm font-semibold text-[#02090A]">
-                Pendentes · {pendentes.length}
-              </h3>
-            </div>
-            <div className="space-y-3">
-              {pendentes.map((nota: any) => (
-                <Card key={nota.id}>
-                  <NotaCard
-                    nota={{
-                      ...nota,
-                      status: nota.status as 'pendente' | 'pago',
-                    }}
-                    cliente={{
-                      id: cliente.id,
-                      nome: cliente.nome,
-                      apelido: cliente.apelido,
-                      telefone: cliente.telefone,
-                    }}
-                    ultimaAcao={nota.ultimaAcao}
-                    showAvatar={false}
-                    onCobrar={() => setCobrarNotas([notaToComCliente(nota)])}
-                    onMarcarPago={() => handleMarcarPago(nota)}
-                    onEdit={handleEditNota}
-                    onDelete={handleDeleteNota}
-                  />
-                </Card>
-              ))}
-            </div>
-          </section>
-        )}
+        <div className="lg:grid lg:grid-cols-3 lg:gap-8">
 
-        {/* Seção Pagas */}
-        {pagas.length > 0 && (
-          <section className="mt-8">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-[#22C55E]" />
-              <h3 className="text-sm font-semibold text-[#02090A]">
-                Pagas · {pagas.length}
-              </h3>
-            </div>
-            <Card className="divide-y divide-[#E5E5E5]">
-              {pagas.map((nota) => (
-                <div key={nota.id} className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-[#02090A]">
-                        {nota.descricao || 'Compra'}
-                      </p>
-                      <p className="text-sm text-[#6B7280]">
-                        {formatCurrencyShort(Number(nota.valor))} · Pago {nota.data_pagamento ? formatRelativeDate(nota.data_pagamento.split('T')[0]) : ''}
-                      </p>
+          {/* Seção Pendentes */}
+          {pendentes.length > 0 && (
+            <section className="mt-8">
+              <div className="flex items-center gap-2 mb-3">
+                <div className={`w-2 h-2 rounded-full ${temVencida ? 'bg-[#EF4444]' : 'bg-[#EAB308]'}`} />
+                <h3 className="text-sm font-semibold text-[#02090A]">
+                  Pendentes · {pendentes.length}
+                </h3>
+              </div>
+              <div className="space-y-3">
+                {pendentes.map((nota: any) => (
+                  <Card key={nota.id}>
+                    <NotaCard
+                      nota={{
+                        ...nota,
+                        status: nota.status as 'pendente' | 'pago',
+                      }}
+                      cliente={{
+                        id: cliente.id,
+                        nome: cliente.nome,
+                        apelido: cliente.apelido,
+                        telefone: cliente.telefone,
+                      }}
+                      ultimaAcao={nota.ultimaAcao}
+                      showAvatar={false}
+                      onCobrar={() => setCobrarNotas([notaToComCliente(nota)])}
+                      onMarcarPago={() => handleMarcarPago(nota)}
+                      onEdit={handleEditNota}
+                      onDelete={handleDeleteNota}
+                    />
+                  </Card>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Seção Pagas */}
+          {pagas.length > 0 && (
+            <section className="mt-8">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 rounded-full bg-[#22C55E]" />
+                <h3 className="text-sm font-semibold text-[#02090A]">
+                  Pagas · {pagas.length}
+                </h3>
+              </div>
+              <Card className="divide-y divide-[#E5E5E5]">
+                {pagas.map((nota) => (
+                  <div key={nota.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-[#02090A]">
+                          {nota.descricao || 'Compra'}
+                        </p>
+                        <p className="text-sm text-[#6B7280]">
+                          {formatCurrencyShort(Number(nota.valor))} · Pago {nota.data_pagamento ? formatRelativeDate(nota.data_pagamento.split('T')[0]) : ''}
+                        </p>
+                      </div>
+                      <CheckIcon className="h-4 w-4 text-green-500" />
                     </div>
-                    <CheckIcon className="h-4 w-4 text-green-500" />
                   </div>
-                </div>
-              ))}
-            </Card>
-          </section>
-        )}
+                ))}
+              </Card>
+            </section>
+          )}
+        </div>
       </div>
 
       <FAB onClick={() => setShowWizard(true)} />

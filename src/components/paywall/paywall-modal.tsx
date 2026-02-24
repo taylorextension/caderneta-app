@@ -14,7 +14,7 @@ const features = [
 export function PaywallModal() {
   return (
     <div className="fixed inset-0 z-[60] bg-white flex items-center justify-center p-6">
-      <div className="w-full max-w-sm text-center">
+      <div className="w-full max-w-sm lg:max-w-md text-center">
         <h1 className="text-xl font-semibold text-text-primary mb-3">
           Seu período grátis acabou
         </h1>

@@ -45,7 +45,7 @@ export default function AjustesPage() {
 
   return (
     <PageTransition>
-      <div className="p-6">
+      <div className="p-6 lg:px-0 lg:py-8 lg:max-w-lg lg:mx-auto">
         <h1 className="text-xl font-semibold mb-6">Ajustes</h1>
 
         {trialAtivo && (

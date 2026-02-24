@@ -277,8 +277,8 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-bg-app overflow-y-auto">
-      <div className="p-6">
+    <div className="fixed inset-0 z-50 bg-bg-app overflow-y-auto lg:flex lg:items-start lg:justify-center lg:pt-12">
+      <div className="p-6 lg:w-full lg:max-w-lg">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-semibold">Nova venda</h1>
           <button onClick={onClose}>

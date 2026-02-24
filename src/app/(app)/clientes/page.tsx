@@ -152,8 +152,8 @@ export default function ClientesPage() {
 
   return (
     <PageTransition>
-      <div className="p-6">
-        <h1 className="text-xl font-semibold text-[#02090A] mb-4">
+      <div className="p-6 lg:px-0 lg:py-8">
+        <h1 className="text-xl lg:text-2xl font-semibold text-[#02090A] mb-4">
           Clientes · {clientes.length}
         </h1>
 
@@ -170,7 +170,7 @@ export default function ClientesPage() {
         </div>
 
         {/* Sort dropdown */}
-        <div className="flex items-center justify-between mt-4 mb-4">
+        <div className="flex items-center justify-between mt-4 mb-4 lg:mt-0 lg:mb-0">
           <span className="text-xs text-[#9CA3AF]">Ordenar</span>
           <select
             value={sort}
@@ -192,7 +192,7 @@ export default function ClientesPage() {
             onAction={() => setShowWizard(true)}
           />
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 lg:space-y-0">
             {filtered.map((c) => {
               const status = getStatusSubtext(c)
               return (

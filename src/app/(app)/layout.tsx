@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
 import { useTrial } from '@/hooks/use-trial'
 import { BottomNav } from '@/components/layout/bottom-nav'
+import { Sidebar } from '@/components/layout/sidebar'
 import { PaywallModal } from '@/components/paywall/paywall-modal'
 import { Skeleton } from '@/components/ui/skeleton'
 import { isOnboardingComplete } from '@/lib/onboarding'
@@ -72,8 +73,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-bg-app pb-[72px]">
-      {children}
+    <div className="min-h-screen bg-bg-app">
+      <Sidebar />
+      <div className="pb-[72px] lg:pb-0 lg:ml-[240px]">
+        <div className="lg:max-w-5xl lg:mx-auto lg:px-8">
+          {children}
+        </div>
+      </div>
       <BottomNav />
     </div>
   )

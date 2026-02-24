@@ -386,8 +386,8 @@ export default function InicioPage() {
 
   return (
     <PageTransition>
-      <div className="p-6">
-        <h1 className="text-xl font-semibold text-text-primary">
+      <div className="p-6 lg:px-0 lg:py-8">
+        <h1 className="text-xl lg:text-2xl font-semibold text-text-primary">
           Olá, {profile?.nome.split(' ')[0]}
         </h1>
         <p className="text-sm text-text-secondary">{profile?.nome_loja}</p>
@@ -412,90 +412,72 @@ export default function InicioPage() {
         ) : (
           <>
 
-            {data && data.vencidas.length > 0 && (
-              <div className="mt-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="h-2 w-2 rounded-full bg-dot-red" />
-                  <h2 className="text-sm font-semibold text-text-primary">
-                    Vencidas · {data.vencidas.length}
-                  </h2>
+            <div className="lg:grid lg:grid-cols-2 lg:gap-6">
+              {data && data.vencidas.length > 0 && (
+                <div className="mt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="h-2 w-2 rounded-full bg-dot-red" />
+                    <h2 className="text-sm font-semibold text-text-primary">
+                      Vencidas · {data.vencidas.length}
+                    </h2>
+                  </div>
+                  <div className="space-y-3">
+                    {data.vencidas.map((nota) => (
+                      <Card key={nota.id}>
+                        <NotaCard
+                          nota={nota}
+                          cliente={{
+                            id: nota.cliente_id,
+                            nome: nota.cliente_nome,
+                            apelido: nota.apelido,
+                            telefone: nota.cliente_telefone,
+                          }}
+                          ultimaAcao={ultimasAcoes.get(nota.id)}
+                          showAvatar={true}
+                          onCobrar={() => setCobrarNotas([nota])}
+                          onMarcarPago={() => handleMarcarPago(nota)}
+                          onEdit={handleEditNota}
+                          onDelete={handleDeleteNota}
+                        />
+                      </Card>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  {data.vencidas.map((nota) => (
-                    <Card key={nota.id}>
-                      <NotaCard
-                        nota={nota}
-                        cliente={{
-                          id: nota.cliente_id,
-                          nome: nota.cliente_nome,
-                          apelido: nota.apelido,
-                          telefone: nota.cliente_telefone,
-                        }}
-                        ultimaAcao={ultimasAcoes.get(nota.id)}
-                        showAvatar={true}
-                        onCobrar={() => setCobrarNotas([nota])}
-                        onMarcarPago={() => handleMarcarPago(nota)}
-                        onEdit={handleEditNota}
-                        onDelete={handleDeleteNota}
-                      />
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
 
-            {data && data.vencendo.length > 0 && (
-              <div className="mt-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="h-2 w-2 rounded-full bg-dot-yellow" />
-                  <h2 className="text-sm font-semibold text-text-primary">
-                    Vence em breve · {data.vencendo.length}
-                  </h2>
+              {data && data.vencendo.length > 0 && (
+                <div className="mt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="h-2 w-2 rounded-full bg-dot-yellow" />
+                    <h2 className="text-sm font-semibold text-text-primary">
+                      Vence em breve · {data.vencendo.length}
+                    </h2>
+                  </div>
+                  <div className="space-y-3">
+                    {data.vencendo.map((nota) => (
+                      <Card key={nota.id}>
+                        <NotaCard
+                          nota={nota}
+                          cliente={{
+                            id: nota.cliente_id,
+                            nome: nota.cliente_nome,
+                            apelido: nota.apelido,
+                            telefone: nota.cliente_telefone,
+                          }}
+                          ultimaAcao={ultimasAcoes.get(nota.id)}
+                          showAvatar={true}
+                          onCobrar={() => setCobrarNotas([nota])}
+                          onMarcarPago={() => handleMarcarPago(nota)}
+                          onEdit={handleEditNota}
+                          onDelete={handleDeleteNota}
+                        />
+                      </Card>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  {data.vencendo.map((nota) => (
-                    <Card key={nota.id}>
-                      <NotaCard
-                        nota={nota}
-                        cliente={{
-                          id: nota.cliente_id,
-                          nome: nota.cliente_nome,
-                          apelido: nota.apelido,
-                          telefone: nota.cliente_telefone,
-                        }}
-                        ultimaAcao={ultimasAcoes.get(nota.id)}
-                        showAvatar={true}
-                        onCobrar={() => setCobrarNotas([nota])}
-                        onMarcarPago={() => handleMarcarPago(nota)}
-                        onEdit={handleEditNota}
-                        onDelete={handleDeleteNota}
-                      />
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {data && data.recebidos_hoje.length > 0 && (
-              <div className="mt-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="h-2 w-2 rounded-full bg-dot-green" />
-                  <h2 className="text-sm font-semibold text-text-primary">
-                    Recebido
-                  </h2>
-                </div>
-                <Card className="divide-y divide-divider">
-                  {data.recebidos_hoje.map((item) => (
-                    <div key={item.id} className="py-3">
-                      <p className="text-sm text-text-primary">
-                        {item.cliente_nome} pagou{' '}
-                        {formatCurrencyShort(item.valor)}
-                      </p>
-                    </div>
-                  ))}
-                </Card>
-              </div>
-            )}
           </>
         )}
       </div>

@@ -42,6 +42,16 @@ input, textarea, select {
   font-size: 16px !important;
 }
 
+@media (min-width: 1024px) {
+  input, textarea, select {
+    font-size: inherit !important;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

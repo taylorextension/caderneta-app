@@ -37,7 +37,7 @@ export default function PlanoPage() {
 
   return (
     <PageTransition>
-      <div className="p-6">
+      <div className="p-6 lg:px-0 lg:py-8 lg:max-w-lg lg:mx-auto">
         <button
           onClick={() => router.back()}
           className="flex items-center gap-1 text-sm text-[#6B7280] mb-4"

@@ -95,7 +95,7 @@ export default function LoginPage() {
   return (
     <PageTransition>
       <div className="min-h-screen flex flex-col justify-center px-6 py-12">
-        <div className="w-full max-w-sm mx-auto">
+        <div className="w-full max-w-sm lg:max-w-md mx-auto">
           <h1 className="text-xl font-bold text-text-primary mb-8">
             Caderneta
           </h1>

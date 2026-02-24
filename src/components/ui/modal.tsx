@@ -37,7 +37,7 @@ export function Modal({ open, onClose, children }: ModalProps) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative bg-white rounded-xl p-6 w-full max-w-sm shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]"
+            className="relative bg-white rounded-xl p-6 w-full max-w-sm lg:max-w-md shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]"
           >
             {children}
           </motion.div>

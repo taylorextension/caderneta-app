@@ -16,6 +16,7 @@ import {
   Cog6ToothIcon as CogSolid,
 } from '@heroicons/react/24/solid'
 import { cn } from '@/lib/cn'
+import { useAuthStore } from '@/stores/auth-store'
 
 const items = [
   {
@@ -44,15 +45,24 @@ const items = [
   },
 ]
 
-export function BottomNav() {
+export function Sidebar() {
   const pathname = usePathname()
+  const profile = useAuthStore((s) => s.profile)
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-[100] bg-[#F1F1EF] border-t border-divider pb-[env(safe-area-inset-bottom)] lg:hidden"
-      style={{ position: 'fixed', bottom: 0, left: 0, right: 0 }}
-    >
-      <div className="relative flex items-center h-[72px]">
+    <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-[240px] z-[100] flex-col bg-white border-r border-divider">
+      {/* Logo / Store name */}
+      <div className="px-6 pt-8 pb-6 border-b border-divider">
+        <p className="text-base font-bold text-text-primary truncate">
+          {profile?.nome_loja || 'Caderneta'}
+        </p>
+        <p className="text-xs text-text-muted mt-0.5 truncate">
+          {profile?.nome || ''}
+        </p>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-1">
         {items.map((item) => {
           const active = pathname.startsWith(item.href)
           const Icon = active ? item.activeIcon : item.icon
@@ -61,35 +71,30 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex-1 flex flex-col items-center justify-center gap-1 relative transition-colors duration-200',
-                active ? 'text-black' : 'text-text-muted'
+                'relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
+                active
+                  ? 'text-black bg-black/5'
+                  : 'text-text-secondary hover:bg-black/[0.03] hover:text-text-primary'
               )}
             >
               {active && (
                 <motion.div
-                  layoutId="nav-indicator"
-                  className="absolute -top-[9px] left-1/2 -translate-x-1/2 w-10 h-[3px] bg-black rounded-full"
+                  layoutId="sidebar-indicator"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-black rounded-full"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}
-              <motion.div
-                animate={{ scale: active ? 1.12 : 1 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              >
-                <Icon className="h-5 w-5" />
-              </motion.div>
-              <span
-                className={cn(
-                  'text-[10px]',
-                  active ? 'font-semibold' : 'font-medium'
-                )}
-              >
-                {item.label}
-              </span>
+              <Icon className="h-5 w-5 shrink-0" />
+              <span>{item.label}</span>
             </Link>
           )
         })}
+      </nav>
+
+      {/* Footer */}
+      <div className="px-6 py-4 border-t border-divider">
+        <p className="text-[10px] text-text-muted">Caderneta © 2026</p>
       </div>
-    </nav>
+    </aside>
   )
 }

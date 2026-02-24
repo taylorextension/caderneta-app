@@ -191,7 +191,7 @@ export default function PublicPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center p-6">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm lg:max-w-md">
         <h1 className="text-xl font-semibold text-center mb-1">
           {nota.profiles?.nome_loja || 'Caderneta'}
         </h1>
