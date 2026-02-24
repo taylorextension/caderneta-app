@@ -178,7 +178,7 @@ export default function HistoricoPage() {
                         </Card>
 
                         {/* Grouped by month */}
-                        <div className="mt-6 space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
+                        <div className="mt-6 space-y-6">
                             {groups.map((group) => (
                                 <div key={group.key}>
                                     <div className="flex items-center justify-between mb-3">
