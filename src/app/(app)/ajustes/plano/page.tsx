@@ -12,11 +12,10 @@ import { ArrowLeftIcon, CheckCircleIcon } from '@heroicons/react/24/solid'
 
 const FEATURES = [
   'Clientes ilimitados',
-  'IA escreve cobranças',
+  'IA escreve cobranças personalizadas',
   'Escaneia notas com câmera',
-  'Pix automático com QR Code',
+  'Histórico completo de pagamentos',
   'Saiba se abriram sua cobrança',
-  'Suporte via WhatsApp',
 ]
 
 export default function PlanoPage() {

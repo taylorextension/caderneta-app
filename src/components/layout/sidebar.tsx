@@ -53,9 +53,13 @@ export function Sidebar() {
     <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-[240px] z-[100] flex-col bg-white border-r border-divider">
       {/* Logo / Store name */}
       <div className="px-6 pt-8 pb-6 border-b border-divider">
-        <p className="text-base font-bold text-text-primary truncate">
-          {profile?.nome_loja || 'Caderneta'}
-        </p>
+        {profile?.nome_loja ? (
+          <p className="text-base font-bold text-text-primary truncate">
+            {profile.nome_loja}
+          </p>
+        ) : (
+          <img src="/logo.png" alt="Caderneta" className="h-6 w-auto object-contain" />
+        )}
         <p className="text-xs text-text-muted mt-0.5 truncate">
           {profile?.nome || ''}
         </p>

@@ -92,7 +92,7 @@ export default function CadastroPage() {
     <PageTransition>
       <div className="min-h-screen flex flex-col justify-center px-6 py-12">
         <div className="w-full max-w-sm lg:max-w-md mx-auto">
-          <h1 className="text-xl font-bold text-text-primary">Caderneta</h1>
+          <img src="/logo.png" alt="Caderneta" className="h-8 w-auto mb-8" />
           <p className="text-sm text-text-secondary mt-1 mb-8">
             Organize seu fiado digital
           </p>

@@ -31,7 +31,7 @@ function formatDate(dateStr: string | null) {
     const date = new Date(dateStr)
     return date.toLocaleDateString('pt-BR', {
         day: '2-digit',
-        month: 'short',
+        month: '2-digit',
         year: 'numeric',
     })
 }
