@@ -25,6 +25,7 @@ export default function SetupPage() {
   const [pixTipo, setPixTipo] = useState<string>('cpf')
   const [pixChave, setPixChave] = useState('')
   const [pixNome, setPixNome] = useState('')
+  const [pixCidade, setPixCidade] = useState('')
 
   async function handleSaveLoja() {
     if (!nomeLoja.trim()) {
@@ -59,6 +60,7 @@ export default function SetupPage() {
           pix_tipo: pixTipo,
           pix_chave: pixChave || null,
           pix_nome: pixNome || null,
+          pix_cidade: pixCidade || 'SAO PAULO',
           onboarding_completo: true,
         })
         .eq('id', user.id)
@@ -84,6 +86,7 @@ export default function SetupPage() {
             pix_tipo: pixTipo,
             pix_chave: pixChave || null,
             pix_nome: pixNome || null,
+            pix_cidade: pixCidade || 'SAO PAULO',
             onboarding_completo: true,
           })
           .select('id')
@@ -262,6 +265,14 @@ export default function SetupPage() {
                   onChange={(e) => setPixNome(e.target.value)}
                   placeholder="Nome que aparece no Pix"
                   hint="Como aparece na sua conta bancária"
+                />
+
+                <Input
+                  label="Cidade"
+                  value={pixCidade}
+                  onChange={(e) => setPixCidade(e.target.value.toUpperCase())}
+                  placeholder="Ex: SAO PAULO"
+                  hint="Cidade do recebedor (aparece no QR Code)"
                 />
               </div>
 

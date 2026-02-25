@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
+import { useDataStore } from '@/stores/data-store'
 import { PageTransition } from '@/components/layout/page-transition'
 import { FAB } from '@/components/layout/fab'
 import { StatsBar } from '@/components/inicio/stats-bar'
@@ -20,9 +21,13 @@ import type { InicioData, NotaComCliente } from '@/types/database'
 export default function InicioPage() {
   const profile = useAuthStore((s) => s.profile)
   const addToast = useUIStore((s) => s.addToast)
-  const [data, setData] = useState<InicioData | null>(null)
-  const [ultimasAcoes, setUltimasAcoes] = useState<Map<string, { tipo: string; created_at: string }>>(new Map())
-  const [loading, setLoading] = useState(true)
+  const cachedInicio = useDataStore((s) => s.inicioData)
+  const cachedAcoes = useDataStore((s) => s.ultimasAcoes)
+  const setCachedInicio = useDataStore((s) => s.setInicioData)
+  const setCachedAcoes = useDataStore((s) => s.setUltimasAcoes)
+  const [data, setData] = useState<InicioData | null>(cachedInicio)
+  const [ultimasAcoes, setUltimasAcoes] = useState<Map<string, { tipo: string; created_at: string }>>(new Map(Object.entries(cachedAcoes)))
+  const [loading, setLoading] = useState(!cachedInicio)
   const [cobrarNotas, setCobrarNotas] = useState<NotaComCliente[]>([])
   const [showWizard, setShowWizard] = useState(false)
 
@@ -69,6 +74,7 @@ export default function InicioPage() {
         })
 
         setUltimasAcoes(acoesMap)
+        setCachedAcoes(Object.fromEntries(acoesMap))
       }
 
       const { data: inicioResult, error: inicioError } = await supabase.rpc(
@@ -81,6 +87,7 @@ export default function InicioPage() {
       if (!inicioError && inicioResult) {
         const inicioData = inicioResult as InicioData
         setData(inicioData)
+        setCachedInicio(inicioData)
 
         const notaIds = [...inicioData.vencidas, ...inicioData.vencendo].map((nota) => nota.id)
         await carregarUltimasAcoes(notaIds)
@@ -218,13 +225,15 @@ export default function InicioPage() {
       const totalPendente = pendentes.reduce((acc, n) => acc + Number(n.valor || 0), 0)
       const recebidoMes = pagosMes.reduce((acc, n) => acc + Number(n.valor || 0), 0)
 
-      setData({
+      const built: InicioData = {
         total_pendente: totalPendente,
         recebido_mes: recebidoMes,
         vencidas,
         vencendo,
         recebidos_hoje: recebidosHoje,
-      })
+      }
+      setData(built)
+      setCachedInicio(built)
 
       const notaIds = [...vencidas, ...vencendo].map((nota) => nota.id)
       await carregarUltimasAcoes(notaIds)

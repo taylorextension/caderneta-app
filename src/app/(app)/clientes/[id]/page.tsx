@@ -76,10 +76,33 @@ export default function ClienteDetailPage() {
         .eq('status', 'pendente')
         .order('data_vencimento', { ascending: true })
 
+      // Also fetch cobrancas for these notes
+      const pendentesIds = (pendentesData || []).map((n: any) => n.id)
+      let cobrancasMap = new Map<string, { tipo: string; created_at: string }>()
+      if (pendentesIds.length > 0) {
+        const { data: cobrancasData } = await supabase
+          .from('cobrancas')
+          .select('nota_id, enviado_em')
+          .in('nota_id', pendentesIds)
+          .order('enviado_em', { ascending: false })
+
+          ; (cobrancasData || []).forEach((c: any) => {
+            if (!cobrancasMap.has(c.nota_id)) {
+              cobrancasMap.set(c.nota_id, {
+                tipo: 'lembrete_enviado',
+                created_at: c.enviado_em,
+              })
+            }
+          })
+      }
+
       const pendentesComAcao = (pendentesData || []).map((nota: any) => {
         const eventos = nota.eventos || []
-        const ultimaAcao = eventos.length > 0
-          ? eventos.sort((a: any, b: any) =>
+        // Merge cobrancas as events
+        const cobranca = cobrancasMap.get(nota.id)
+        const allEvents = cobranca ? [...eventos, cobranca] : eventos
+        const ultimaAcao = allEvents.length > 0
+          ? allEvents.sort((a: any, b: any) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
           )[0]
           : null

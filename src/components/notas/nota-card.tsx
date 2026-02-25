@@ -90,15 +90,19 @@ export function NotaCard({
       lembrete_enviado: PaperAirplaneIcon,
       link_aberto: EyeIcon,
       pix_copiado: ClipboardDocumentCheckIcon,
+      marcou_pago: ClipboardDocumentCheckIcon,
+      desfez_pago: SparklesIcon,
     }
     return icons[tipo] || SparklesIcon
   }
 
   const getAcaoText = (tipo: string) => {
     const labels: Record<string, string> = {
-      lembrete_enviado: 'Lembrete enviado',
+      lembrete_enviado: 'Cobrança enviada',
       link_aberto: 'Abriu o link',
       pix_copiado: 'Copiou o Pix',
+      marcou_pago: 'Marcou como pago',
+      desfez_pago: 'Pagamento desfeito',
     }
     return labels[tipo] || tipo
   }

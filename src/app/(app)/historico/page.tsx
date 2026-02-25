@@ -4,13 +4,16 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
+import { useUIStore } from '@/stores/ui-store'
 import { PageTransition } from '@/components/layout/page-transition'
 import { Card } from '@/components/ui/card'
 import { Avatar } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
+import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import { formatCurrencyShort } from '@/lib/format'
-import { ClockIcon } from '@heroicons/react/24/outline'
+import { ClockIcon, TrashIcon } from '@heroicons/react/24/outline'
 
 interface NotaPaga {
     id: string
@@ -33,20 +36,6 @@ function formatDate(dateStr: string | null) {
     })
 }
 
-function formatRelativeDate(dateStr: string | null) {
-    if (!dateStr) return ''
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-    if (diffDays === 0) return 'Hoje'
-    if (diffDays === 1) return 'Ontem'
-    if (diffDays < 7) return `${diffDays} dias atrás`
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} sem. atrás`
-    return formatDate(dateStr)
-}
-
 function groupByMonth(notas: NotaPaga[]) {
     const groups = new Map<string, NotaPaga[]>()
 
@@ -54,7 +43,6 @@ function groupByMonth(notas: NotaPaga[]) {
         const dateStr = nota.data_pagamento || nota.data_compra
         const date = new Date(dateStr)
         const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-        const label = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 
         if (!groups.has(key)) {
             groups.set(key, [])
@@ -74,9 +62,12 @@ function groupByMonth(notas: NotaPaga[]) {
 
 export default function HistoricoPage() {
     const profile = useAuthStore((s) => s.profile)
+    const addToast = useUIStore((s) => s.addToast)
     const router = useRouter()
     const [notas, setNotas] = useState<NotaPaga[]>([])
     const [loading, setLoading] = useState(true)
+    const [deleteId, setDeleteId] = useState<string | null>(null)
+    const [deleting, setDeleting] = useState(false)
 
     const fetchData = useCallback(async () => {
         if (!profile) return
@@ -93,10 +84,9 @@ export default function HistoricoPage() {
 
             if (error) throw error
 
-            // Fetch client names
             const clienteIds = Array.from(new Set((notasData || []).map((n: any) => n.cliente_id)))
 
-            let clientesMap = new Map<string, { nome: string; apelido: string | null }>()
+            const clientesMap = new Map<string, { nome: string; apelido: string | null }>()
             if (clienteIds.length > 0) {
                 const { data: clientesData } = await supabase
                     .from('clientes')
@@ -133,6 +123,22 @@ export default function HistoricoPage() {
     useEffect(() => {
         fetchData()
     }, [fetchData])
+
+    const handleDelete = async () => {
+        if (!deleteId || !profile) return
+        try {
+            setDeleting(true)
+            const supabase = createClient()
+            await supabase.from('notas').delete().eq('id', deleteId)
+            setNotas((prev) => prev.filter((n) => n.id !== deleteId))
+            setDeleteId(null)
+            addToast({ message: 'Nota excluída', type: 'info' })
+        } catch {
+            addToast({ message: 'Erro ao excluir', type: 'error' })
+        } finally {
+            setDeleting(false)
+        }
+    }
 
     const totalRecebido = notas.reduce((acc, n) => acc + n.valor, 0)
     const groups = groupByMonth(notas)
@@ -191,24 +197,35 @@ export default function HistoricoPage() {
                                     </div>
                                     <Card className="divide-y divide-divider !p-0">
                                         {group.notas.map((nota) => (
-                                            <button
+                                            <div
                                                 key={nota.id}
-                                                onClick={() => router.push(`/clientes/${nota.cliente_id}`)}
-                                                className="w-full flex items-center gap-3 p-4 text-left hover:bg-black/[0.02] transition-colors"
+                                                className="flex items-center gap-3 p-4"
                                             >
-                                                <Avatar name={nota.cliente_apelido || nota.cliente_nome} />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-text-primary truncate">
-                                                        {nota.cliente_apelido || nota.cliente_nome}
-                                                    </p>
-                                                    <p className="text-xs text-text-secondary">
-                                                        {nota.descricao || 'Pagamento'} · {formatRelativeDate(nota.data_pagamento)}
-                                                    </p>
-                                                </div>
+                                                <button
+                                                    onClick={() => router.push(`/clientes/${nota.cliente_id}`)}
+                                                    className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                                                >
+                                                    <Avatar name={nota.cliente_apelido || nota.cliente_nome} />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-medium text-text-primary truncate">
+                                                            {nota.cliente_apelido || nota.cliente_nome}
+                                                        </p>
+                                                        <p className="text-xs text-text-secondary">
+                                                            {nota.descricao || 'Pagamento'} · {formatDate(nota.data_pagamento)}
+                                                        </p>
+                                                    </div>
+                                                </button>
                                                 <p className="text-sm font-semibold text-success shrink-0">
                                                     +{formatCurrencyShort(nota.valor)}
                                                 </p>
-                                            </button>
+                                                <button
+                                                    onClick={() => setDeleteId(nota.id)}
+                                                    className="shrink-0 p-1.5 rounded-full text-text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                                                    title="Excluir"
+                                                >
+                                                    <TrashIcon className="h-4 w-4" />
+                                                </button>
+                                            </div>
                                         ))}
                                     </Card>
                                 </div>
@@ -217,6 +234,20 @@ export default function HistoricoPage() {
                     </>
                 )}
             </div>
+
+            {/* Delete confirmation modal */}
+            <Modal open={!!deleteId} onClose={() => setDeleteId(null)}>
+                <h3 className="text-lg font-semibold mb-2 text-text-primary">Excluir nota?</h3>
+                <p className="text-sm text-text-secondary mb-6">Esta ação não pode ser desfeita.</p>
+                <div className="flex gap-3">
+                    <Button variant="secondary" className="flex-1" onClick={() => setDeleteId(null)}>
+                        Cancelar
+                    </Button>
+                    <Button className="flex-1 !bg-red-500 !text-white" onClick={handleDelete} loading={deleting}>
+                        Excluir
+                    </Button>
+                </div>
+            </Modal>
         </PageTransition>
     )
 }

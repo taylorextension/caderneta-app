@@ -28,9 +28,11 @@ export function NotaCard({ nota, variant, onCobrar, onMarcarPago, ultimaAcao }: 
   const getAcaoText = () => {
     if (!ultimaAcao) return null
     const labels: Record<string, string> = {
-      lembrete_enviado: 'Lembrete enviado',
+      lembrete_enviado: 'Cobrança enviada',
       link_aberto: 'Abriu o link',
       pix_copiado: 'Copiou o Pix',
+      marcou_pago: 'Marcou como pago',
+      desfez_pago: 'Pagamento desfeito',
     }
     return labels[ultimaAcao.tipo] || ultimaAcao.tipo
   }

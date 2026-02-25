@@ -6,6 +6,7 @@ import { motion } from 'motion/react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
+import { useDataStore } from '@/stores/data-store'
 import { PageTransition } from '@/components/layout/page-transition'
 import { FAB } from '@/components/layout/fab'
 import { Card } from '@/components/ui/card'
@@ -32,8 +33,10 @@ export default function ClientesPage() {
   const router = useRouter()
   const profile = useAuthStore((s) => s.profile)
   const addToast = useUIStore((s) => s.addToast)
-  const [clientes, setClientes] = useState<ClienteComDivida[]>([])
-  const [loading, setLoading] = useState(true)
+  const cachedClientes = useDataStore((s) => s.clientesData)
+  const setCachedClientes = useDataStore((s) => s.setClientesData)
+  const [clientes, setClientes] = useState<ClienteComDivida[]>((cachedClientes as ClienteComDivida[]) || [])
+  const [loading, setLoading] = useState(!cachedClientes)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortOption>('divida')
   const [showWizard, setShowWizard] = useState(false)
@@ -94,6 +97,7 @@ export default function ClientesPage() {
       })
 
       setClientes(result)
+      setCachedClientes(result)
     } catch {
       addToast({ message: 'Erro ao carregar clientes', type: 'error' })
     } finally {

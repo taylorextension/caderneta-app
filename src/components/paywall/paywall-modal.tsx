@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button'
 
 const features = [
   'Clientes ilimitados',
-  'IA escreve cobranças',
+  'IA escreve cobranças personalizadas',
   'Escaneia notas com câmera',
-  'Pix automático',
+  'Histórico completo de pagamentos',
   'Saiba se abriram sua cobrança',
 ]
 
