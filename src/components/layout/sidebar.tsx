@@ -58,7 +58,7 @@ export function Sidebar() {
             {profile.nome_loja}
           </p>
         ) : (
-          <img src="/logo.png" alt="Caderneta" className="h-40 w-auto object-contain" />
+          <img src="/logo.png" alt="Caderneta" className="h-32 w-auto object-contain" />
         )}
         <p className="text-xs text-text-muted mt-0.5 truncate">
           {profile?.nome || ''}

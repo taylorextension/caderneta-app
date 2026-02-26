@@ -193,7 +193,7 @@ export default function PublicPage() {
     <div className="min-h-screen bg-white flex flex-col items-center p-6">
       <div className="w-full max-w-sm lg:max-w-md">
         <p className="text-sm font-medium text-text-primary flex items-center justify-center">
-          {nota.profiles?.nome_loja ? nota.profiles.nome_loja : <img src="/logo.png" alt="Caderneta" className="h-40 w-auto" />}
+          {nota.profiles?.nome_loja ? nota.profiles.nome_loja : <img src="/logo.png" alt="Caderneta" className="h-32 w-auto" />}
         </p>
 
         {isPaid ? (
