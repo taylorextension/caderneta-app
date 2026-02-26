@@ -96,7 +96,7 @@ export default function LoginPage() {
     <PageTransition>
       <div className="min-h-screen flex flex-col justify-center px-6 py-12">
         <div className="w-full max-w-sm lg:max-w-md mx-auto">
-          <img src="/logo.png" alt="Caderneta" className="h-8 w-auto mb-8" />
+          <img src="/logo.png" alt="Caderneta" className="h-12 w-auto mx-auto mb-8" />
 
           <form onSubmit={handleSubmit} className="space-y-6" suppressHydrationWarning>
             <Input

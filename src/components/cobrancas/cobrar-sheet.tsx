@@ -91,7 +91,6 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
         nota_id: notas.length === 1 ? notas[0].id : null,
         cliente_id: cliente.cliente_id,
         mensagem,
-        notas_ids: notas.map((n) => n.id),
       })
 
       for (const nota of notas) {
