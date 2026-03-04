@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { CheckIcon } from '@heroicons/react/24/solid'
 import { Button } from '@/components/ui/button'
+import { useAuthStore } from '@/stores/auth-store'
 import { createClient } from '@/lib/supabase/client'
+import type { Profile } from '@/types/database'
 
 const CHECKOUT_URL = 'https://pay.cakto.com.br/qvw9jmk_792944'
 
@@ -15,7 +17,34 @@ const features = [
   'Saiba se abriram sua cobrança',
 ]
 
+function buildCheckoutUrl(profile: Profile | null, email?: string | null) {
+  const params = new URLSearchParams()
+
+  // Nome completo
+  if (profile?.nome) params.set('name', profile.nome)
+
+  // Email
+  if (email) params.set('email', email)
+
+  // CPF — se a chave PIX for CPF, já preenche
+  if (profile?.pix_tipo === 'cpf' && profile.pix_chave) {
+    params.set('cpf', profile.pix_chave.replace(/\D/g, ''))
+  }
+
+  // Telefone — Cakto exige com código do país
+  if (profile?.telefone) {
+    const digits = profile.telefone.replace(/\D/g, '')
+    // Garante que começa com 55 (Brasil)
+    const phone = digits.startsWith('55') ? digits : `55${digits}`
+    params.set('phone', phone)
+  }
+
+  const qs = params.toString()
+  return qs ? `${CHECKOUT_URL}?${qs}` : CHECKOUT_URL
+}
+
 export function PaywallModal() {
+  const profile = useAuthStore((s) => s.profile)
   const [email, setEmail] = useState<string | null>(null)
 
   useEffect(() => {
@@ -28,10 +57,7 @@ export function PaywallModal() {
   }, [])
 
   function handleAssinar() {
-    const url = email
-      ? `${CHECKOUT_URL}?email=${encodeURIComponent(email)}`
-      : CHECKOUT_URL
-    window.location.href = url
+    window.location.href = buildCheckoutUrl(profile, email)
   }
 
   return (
