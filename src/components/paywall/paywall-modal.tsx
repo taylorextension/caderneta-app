@@ -31,7 +31,12 @@ export function PaywallModal() {
           ))}
         </ul>
 
-        <Button className="w-full">Assinar · R$ 29,90/mês</Button>
+        <Button
+          onClick={() => window.location.href = 'https://pay.cakto.com.br/qvw9jmk_792944'}
+          className="w-full"
+        >
+          Assinar · R$ 29,90/mês
+        </Button>
 
         <p className="mt-4 text-xs text-text-muted">
           Cancele quando quiser

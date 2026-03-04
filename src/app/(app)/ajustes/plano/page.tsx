@@ -95,16 +95,12 @@ export default function PlanoPage() {
             <p className="text-xs text-[#9CA3AF] mt-1">Cancele quando quiser.</p>
 
             <Button
-              onClick={() =>
-                addToast({
-                  message: 'Em breve! Pagamento em implementação.',
-                  type: 'info',
-                })
-              }
+              onClick={() => window.location.href = 'https://pay.cakto.com.br/qvw9jmk_792944'}
               className="w-full mt-4"
             >
               Assinar agora
             </Button>
+
           </div>
         </Card>
       </div>
