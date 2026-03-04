@@ -15,6 +15,7 @@ import {
   ClockIcon as ClockSolid,
   Cog6ToothIcon as CogSolid,
 } from '@heroicons/react/24/solid'
+import { LogoAnimated } from '@/components/ui/logo-animated'
 import { cn } from '@/lib/cn'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -58,7 +59,7 @@ export function Sidebar() {
             {profile.nome_loja}
           </p>
         ) : (
-          <img src="/logo.png" alt="Caderneta" className="h-32 w-auto object-contain" />
+          <LogoAnimated width={120} height={48} className="h-auto w-auto" />
         )}
         <p className="text-xs text-text-muted mt-0.5 truncate">
           {profile?.nome || ''}

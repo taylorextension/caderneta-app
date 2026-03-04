@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+
 import { createClient } from '@/lib/supabase/client'
 import { gerarBRCode, validarBRCode } from '@/lib/pix'
 import { formatCurrencyShort } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { LogoAnimated } from '@/components/ui/logo-animated'
 import type { Nota, Profile, ItemNota } from '@/types/database'
 
 interface NotaComProfile extends Nota {
@@ -104,6 +106,8 @@ export default function PublicPage() {
         }
       }
 
+
+
       return () => window.removeEventListener('beforeunload', handleUnload)
     } catch {
       setNotFound(true)
@@ -162,6 +166,7 @@ export default function PublicPage() {
     } catch {
       // Event tracking failed silently
     }
+
   }
 
   if (loading) {
@@ -193,7 +198,7 @@ export default function PublicPage() {
     <div className="min-h-screen bg-white flex flex-col items-center p-6">
       <div className="w-full max-w-sm lg:max-w-md">
         <p className="text-sm font-medium text-text-primary flex items-center justify-center">
-          {nota.profiles?.nome_loja ? nota.profiles.nome_loja : <img src="/logo.png" alt="Caderneta" className="h-32 w-auto" />}
+          {nota.profiles?.nome_loja ? nota.profiles.nome_loja : <LogoAnimated width={192} height={48} className="h-12 w-auto" />}
         </p>
 
         {isPaid ? (

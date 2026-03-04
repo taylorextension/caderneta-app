@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { LogoAnimated } from '@/components/ui/logo-animated'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
@@ -396,10 +397,21 @@ export default function InicioPage() {
   return (
     <PageTransition>
       <div className="p-6 lg:px-0 lg:py-8">
-        <h1 className="text-xl lg:text-2xl font-semibold text-text-primary">
-          Olá, {profile?.nome.split(' ')[0]}
-        </h1>
-        <p className="text-sm text-text-secondary">{profile?.nome_loja}</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-xl lg:text-2xl font-semibold text-text-primary">
+              Olá, {profile?.nome.split(' ')[0]}
+            </h1>
+            <p className="text-sm text-text-secondary">{profile?.nome_loja}</p>
+          </div>
+          <div className="flex-shrink-0">
+            <LogoAnimated
+              width={40}
+              height={40}
+              priority
+            />
+          </div>
+        </div>
 
         <div className="mt-6">
           <StatsBar
@@ -499,16 +511,18 @@ export default function InicioPage() {
         notas={cobrarNotas}
       />
 
-      {showWizard && (
-        <WizardVenda
-          open={showWizard}
-          onClose={() => {
-            setShowWizard(false)
-            fetchData()
-          }}
-        />
-      )}
-    </PageTransition>
+      {
+        showWizard && (
+          <WizardVenda
+            open={showWizard}
+            onClose={() => {
+              setShowWizard(false)
+              fetchData()
+            }}
+          />
+        )
+      }
+    </PageTransition >
   )
 }
 

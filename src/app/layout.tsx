@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import { ToastContainer } from '@/components/ui/toast'
+import { MetaPixel } from '@/components/analytics/meta-pixel'
+import { Suspense } from 'react'
 import './globals.css'
 
 const inter = localFont({
@@ -79,6 +81,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
       <body className="min-h-screen bg-bg-app font-sans antialiased" suppressHydrationWarning>
+        <Suspense fallback={null}>
+          <MetaPixel />
+        </Suspense>
         {children}
         <ToastContainer />
       </body>

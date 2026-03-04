@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import * as fbq from '@/lib/fpixel'
 import { createClient } from '@/lib/supabase/client'
 import { cadastroSchema } from '@/lib/validators'
 import { useUIStore } from '@/stores/ui-store'
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { PageTransition } from '@/components/layout/page-transition'
+import { LogoAnimated } from '@/components/ui/logo-animated'
 
 export default function CadastroPage() {
   const router = useRouter()
@@ -76,6 +78,8 @@ export default function CadastroPage() {
         console.warn('Aviso profile:', profileError.message)
       }
 
+      fbq.event('CompleteRegistration')
+
       router.push('/setup')
     } catch (err) {
       const message =
@@ -92,7 +96,9 @@ export default function CadastroPage() {
     <PageTransition>
       <div className="min-h-screen flex flex-col justify-center px-6 py-12">
         <div className="w-full max-w-sm lg:max-w-md mx-auto">
-          <img src="/logo.png" alt="Caderneta" className="h-48 w-auto mx-auto mb-8" />
+          <div className="flex justify-center mb-8">
+            <LogoAnimated width={192} height={192} className="h-48 w-auto" priority />
+          </div>
           <p className="text-sm text-text-secondary mt-1 mb-8">
             Organize seu fiado digital
           </p>

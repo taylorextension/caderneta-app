@@ -9,6 +9,7 @@ import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PageTransition } from '@/components/layout/page-transition'
+import { LogoAnimated } from '@/components/ui/logo-animated'
 import { isOnboardingComplete } from '@/lib/onboarding'
 
 export default function LoginPage() {
@@ -96,7 +97,9 @@ export default function LoginPage() {
     <PageTransition>
       <div className="min-h-screen flex flex-col justify-center px-6 py-12">
         <div className="w-full max-w-sm lg:max-w-md mx-auto">
-          <img src="/logo.png" alt="Caderneta" className="h-48 w-auto mx-auto mb-8" />
+          <div className="flex justify-center mb-8">
+            <LogoAnimated width={192} height={192} className="h-48 w-auto" priority />
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6" suppressHydrationWarning>
             <Input
