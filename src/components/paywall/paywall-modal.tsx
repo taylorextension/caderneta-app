@@ -31,12 +31,10 @@ function buildCheckoutUrl(profile: Profile | null, email?: string | null) {
     params.set('cpf', profile.pix_chave.replace(/\D/g, ''))
   }
 
-  // Telefone — Cakto exige com código do país
+  // Telefone — já vem em formato E.164 (ex: +5511999999999, +15551234567)
   if (profile?.telefone) {
     const digits = profile.telefone.replace(/\D/g, '')
-    // Garante que começa com 55 (Brasil)
-    const phone = digits.startsWith('55') ? digits : `55${digits}`
-    params.set('phone', phone)
+    params.set('phone', digits)
   }
 
   const qs = params.toString()
