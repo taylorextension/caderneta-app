@@ -49,10 +49,16 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-[100] bg-[#F1F1EF] border-t border-divider pb-[env(safe-area-inset-bottom)] lg:hidden"
-      style={{ position: 'fixed', bottom: 0, left: 0, right: 0 }}
+      className="fixed bottom-0 left-0 right-0 z-[100] bg-[#F1F1EF] border-t border-divider lg:hidden will-change-transform"
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
+      }}
     >
-      <div className="relative flex items-center h-[72px]">
+      <div className="relative flex items-center h-[56px]">
         {items.map((item) => {
           const active = pathname.startsWith(item.href)
           const Icon = active ? item.activeIcon : item.icon
