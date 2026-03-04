@@ -8,6 +8,7 @@ import { useTrial } from '@/hooks/use-trial'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { Sidebar } from '@/components/layout/sidebar'
 import { PaywallModal } from '@/components/paywall/paywall-modal'
+import { PwaUpdateNotification } from '@/components/pwa/pwa-update-notification'
 import { Skeleton } from '@/components/ui/skeleton'
 import { isOnboardingComplete } from '@/lib/onboarding'
 import type { Profile } from '@/types/database'
@@ -81,6 +82,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </div>
       <BottomNav />
+      <PwaUpdateNotification />
     </div>
   )
 }

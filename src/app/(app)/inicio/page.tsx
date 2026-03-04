@@ -8,6 +8,7 @@ import { useUIStore } from '@/stores/ui-store'
 import { useDataStore } from '@/stores/data-store'
 import { PageTransition } from '@/components/layout/page-transition'
 import { FAB } from '@/components/layout/fab'
+import { PwaInstallButton } from '@/components/pwa/pwa-install-banner'
 import { StatsBar } from '@/components/inicio/stats-bar'
 import { NotaCard } from '@/components/notas/nota-card'
 import { CobrarSheet } from '@/components/cobrancas/cobrar-sheet'
@@ -405,11 +406,7 @@ export default function InicioPage() {
             <p className="text-sm text-text-secondary">{profile?.nome_loja}</p>
           </div>
           <div className="flex-shrink-0">
-            <LogoAnimated
-              width={40}
-              height={40}
-              priority
-            />
+            <PwaInstallButton />
           </div>
         </div>
 

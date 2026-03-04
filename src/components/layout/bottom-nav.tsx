@@ -55,7 +55,7 @@ export function BottomNav() {
         bottom: 0,
         left: 0,
         right: 0,
-        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 14px)',
       }}
     >
       <div className="relative flex items-center h-[56px]">

@@ -1,7 +1,7 @@
-const CACHE_NAME = 'caderneta-v1'
+const CACHE_NAME = 'caderneta-v2'
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting()
+  // Don't skipWaiting automatically — wait for the user to accept the update
 })
 
 self.addEventListener('activate', (event) => {
@@ -10,7 +10,7 @@ self.addEventListener('activate', (event) => {
       Promise.all(
         keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
       )
-    )
+    ).then(() => self.clients.claim())
   )
 })
 
@@ -30,4 +30,11 @@ self.addEventListener('fetch', (event) => {
       })
       .catch(() => caches.match(event.request))
   )
+})
+
+// Listen for skip waiting message from the client
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
 })
