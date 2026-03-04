@@ -1,7 +1,11 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { CheckIcon } from '@heroicons/react/24/solid'
 import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
+
+const CHECKOUT_URL = 'https://pay.cakto.com.br/qvw9jmk_792944'
 
 const features = [
   'Clientes ilimitados',
@@ -12,6 +16,24 @@ const features = [
 ]
 
 export function PaywallModal() {
+  const [email, setEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function getEmail() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user?.email) setEmail(user.email)
+    }
+    getEmail()
+  }, [])
+
+  function handleAssinar() {
+    const url = email
+      ? `${CHECKOUT_URL}?email=${encodeURIComponent(email)}`
+      : CHECKOUT_URL
+    window.location.href = url
+  }
+
   return (
     <div className="fixed inset-0 z-[60] bg-white flex items-center justify-center p-6">
       <div className="w-full max-w-sm lg:max-w-md text-center">
@@ -31,10 +53,7 @@ export function PaywallModal() {
           ))}
         </ul>
 
-        <Button
-          onClick={() => window.location.href = 'https://pay.cakto.com.br/qvw9jmk_792944'}
-          className="w-full"
-        >
+        <Button onClick={handleAssinar} className="w-full">
           Assinar · R$ 29,90/mês
         </Button>
 

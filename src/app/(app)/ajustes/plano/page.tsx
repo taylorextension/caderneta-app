@@ -1,9 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTrial } from '@/hooks/use-trial'
-import { useAuthStore } from '@/stores/auth-store'
-import { useUIStore } from '@/stores/ui-store'
+import { createClient } from '@/lib/supabase/client'
 import { PageTransition } from '@/components/layout/page-transition'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -20,8 +20,17 @@ const FEATURES = [
 
 export default function PlanoPage() {
   const router = useRouter()
-  const addToast = useUIStore((s) => s.addToast)
   const { trialAtivo, diasRestantes, assinaturaAtiva, acesso } = useTrial()
+  const [email, setEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function getEmail() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user?.email) setEmail(user.email)
+    }
+    getEmail()
+  }, [])
 
   if (!acesso) {
     return <PaywallModal />
@@ -95,7 +104,11 @@ export default function PlanoPage() {
             <p className="text-xs text-[#9CA3AF] mt-1">Cancele quando quiser.</p>
 
             <Button
-              onClick={() => window.location.href = 'https://pay.cakto.com.br/qvw9jmk_792944'}
+              onClick={() => {
+                const base = 'https://pay.cakto.com.br/qvw9jmk_792944'
+                const url = email ? `${base}?email=${encodeURIComponent(email)}` : base
+                window.location.href = url
+              }}
               className="w-full mt-4"
             >
               Assinar agora
