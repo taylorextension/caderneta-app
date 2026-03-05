@@ -1,0 +1,16 @@
+.agent
+.agents
+.claude
+.kiro
+.next
+.trae
+.vercel
+.windsurf
+node_modules
+out
+build
+coverage
+supabase/.temp
+package-lock.json
+skills-lock.json
+tsconfig.tsbuildinfo
