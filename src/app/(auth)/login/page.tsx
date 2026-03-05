@@ -22,7 +22,8 @@ export default function LoginPage() {
   function validateField(field: string, value: string) {
     const result = loginSchema.safeParse({ ...form, [field]: value })
     if (!result.success) {
-      const fieldError = result.error.flatten().fieldErrors[field as keyof typeof form]
+      const fieldError =
+        result.error.flatten().fieldErrors[field as keyof typeof form]
       setErrors((prev) => ({
         ...prev,
         [field]: fieldError?.[0] || '',
@@ -55,7 +56,9 @@ export default function LoginPage() {
 
       if (error) throw error
 
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não encontrado')
 
       const { data: profile } = await supabase
@@ -98,10 +101,19 @@ export default function LoginPage() {
       <div className="min-h-screen flex flex-col justify-center px-6 py-12">
         <div className="w-full max-w-sm lg:max-w-md mx-auto">
           <div className="flex justify-center mb-8">
-            <LogoAnimated width={192} height={192} className="h-48 w-auto" priority />
+            <LogoAnimated
+              width={192}
+              height={192}
+              className="h-48 w-auto"
+              priority
+            />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6" suppressHydrationWarning>
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-6"
+            suppressHydrationWarning
+          >
             <Input
               label="Email"
               type="email"

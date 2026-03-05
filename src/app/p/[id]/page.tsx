@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Image from 'next/image'
 import { useParams } from 'next/navigation'
 
 import { gerarBRCode, validarBRCode } from '@/lib/pix'
@@ -70,21 +71,29 @@ export default function PublicPage() {
         )
       }
       window.addEventListener('beforeunload', handleUnload)
-      removeBeforeUnload = () => window.removeEventListener('beforeunload', handleUnload)
+      removeBeforeUnload = () =>
+        window.removeEventListener('beforeunload', handleUnload)
 
       // Generate Pix
       if (notaData.profiles?.pix_chave) {
         // Validações para garantir dados válidos no Pix
         const chavePix = notaData.profiles.pix_chave.trim()
-        const nomeRecebedor = (notaData.profiles.pix_nome || notaData.profiles.nome_loja || 'LOJISTA').trim()
-        const cidadeRecebedor = (notaData.profiles.pix_cidade || 'SAO PAULO').trim()
+        const nomeRecebedor = (
+          notaData.profiles.pix_nome ||
+          notaData.profiles.nome_loja ||
+          'LOJISTA'
+        ).trim()
+        const cidadeRecebedor = (
+          notaData.profiles.pix_cidade || 'SAO PAULO'
+        ).trim()
 
         try {
           const code = gerarBRCode({
             chave: chavePix,
             nome: nomeRecebedor,
             cidade: cidadeRecebedor,
-            valor: Number(notaData.valor) > 0 ? Number(notaData.valor) : undefined,
+            valor:
+              Number(notaData.valor) > 0 ? Number(notaData.valor) : undefined,
             txid: id.substring(0, 25),
           })
 
@@ -94,10 +103,12 @@ export default function PublicPage() {
 
           setBrCode(code)
 
-          // Use a public API to generate the QR Code securely instead of running qrcode library 
+          // Use a public API to generate the QR Code securely instead of running qrcode library
           // which is causing client module instantiation errors ("Buffer is not defined") on some browsers
           const encodedCode = encodeURIComponent(code)
-          setQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodedCode}`)
+          setQrUrl(
+            `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodedCode}`
+          )
         } catch (pixError) {
           console.error('Erro ao gerar Pix:', pixError)
         }
@@ -167,7 +178,6 @@ export default function PublicPage() {
     } catch {
       // Event tracking failed silently
     }
-
   }
 
   if (loading) {
@@ -199,7 +209,11 @@ export default function PublicPage() {
     <div className="min-h-screen bg-white flex flex-col items-center p-6">
       <div className="w-full max-w-sm lg:max-w-md">
         <p className="text-sm font-medium text-text-primary flex items-center justify-center">
-          {nota.profiles?.nome_loja ? nota.profiles.nome_loja : <LogoAnimated width={192} height={48} className="h-12 w-auto" />}
+          {nota.profiles?.nome_loja ? (
+            nota.profiles.nome_loja
+          ) : (
+            <LogoAnimated width={192} height={48} className="h-12 w-auto" />
+          )}
         </p>
 
         {isPaid ? (
@@ -214,16 +228,15 @@ export default function PublicPage() {
             {nota.itens && nota.itens.length > 0 && (
               <div className="mt-6 border border-divider rounded-none p-4">
                 {nota.itens.map((item: ItemNota, i: number) => (
-                  <div
-                    key={i}
-                    className="flex justify-between py-1.5 text-sm"
-                  >
+                  <div key={i} className="flex justify-between py-1.5 text-sm">
                     <span>
                       {item.descricao}{' '}
                       {item.quantidade > 1 && `(${item.quantidade}x)`}
                     </span>
                     <span className="font-medium">
-                      {formatCurrencyShort(item.quantidade * item.valor_unitario)}
+                      {formatCurrencyShort(
+                        item.quantidade * item.valor_unitario
+                      )}
                     </span>
                   </div>
                 ))}
@@ -251,25 +264,24 @@ export default function PublicPage() {
               <>
                 {qrUrl && (
                   <div className="mt-6 flex justify-center">
-                    <img
+                    <Image
                       src={qrUrl}
                       alt="QR Code Pix"
                       width={256}
                       height={256}
                       className="rounded-lg"
+                      unoptimized
                     />
                   </div>
                 )}
 
-                <Button
-                  onClick={handleCopyPix}
-                  className="w-full mt-6"
-                >
+                <Button onClick={handleCopyPix} className="w-full mt-6">
                   {copied ? 'Copiado ✓' : 'Copiar código Pix'}
                 </Button>
 
                 <p className="text-xs text-text-muted text-center mt-3">
-                  Se o QR Code não funcionar, use a chave: {nota.profiles.pix_chave}
+                  Se o QR Code não funcionar, use a chave:{' '}
+                  {nota.profiles.pix_chave}
                 </p>
               </>
             ) : (
@@ -278,7 +290,8 @@ export default function PublicPage() {
                   ⚠️ Pix não configurado
                 </p>
                 <p className="text-xs text-yellow-700 mt-1">
-                  O lojista ainda não configurou a chave Pix. Entre em contato com ele.
+                  O lojista ainda não configurou a chave Pix. Entre em contato
+                  com ele.
                 </p>
               </div>
             )}

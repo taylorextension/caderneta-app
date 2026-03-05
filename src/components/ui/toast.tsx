@@ -12,7 +12,16 @@ const typeIcons: Record<string, string> = {
   info: '→',
 }
 
-function ToastItem({ toast }: { toast: { id: string; message: string; type: 'success' | 'warning' | 'error' | 'info'; action?: { label: string; onClick: () => void } } }) {
+function ToastItem({
+  toast,
+}: {
+  toast: {
+    id: string
+    message: string
+    type: 'success' | 'warning' | 'error' | 'info'
+    action?: { label: string; onClick: () => void }
+  }
+}) {
   const removeToast = useUIStore((s) => s.removeToast)
   const progressRef = useRef<HTMLDivElement>(null)
   const duration = toast.action ? 5 : 3

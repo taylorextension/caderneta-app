@@ -1,23 +1,23 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   --color-primary: #000000;
   --color-accent: #000000;
-  --color-bg-app: #F1F1EF;
-  --color-bg-card: #FFFFFF;
-  --color-text-primary: #02090A;
-  --color-text-secondary: #6B7280;
-  --color-text-muted: #9CA3AF;
-  --color-border: #D4D4D8;
+  --color-bg-app: #f1f1ef;
+  --color-bg-card: #ffffff;
+  --color-text-primary: #02090a;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-border: #d4d4d8;
   --color-border-focus: #000000;
-  --color-divider: #E5E5E5;
-  --color-success: #16A34A;
-  --color-warning: #EAB308;
-  --color-error: #DC2626;
-  --color-whatsapp: #25D366;
-  --color-dot-red: #EF4444;
-  --color-dot-yellow: #EAB308;
-  --color-dot-green: #22C55E;
+  --color-divider: #e5e5e5;
+  --color-success: #16a34a;
+  --color-warning: #eab308;
+  --color-error: #dc2626;
+  --color-whatsapp: #25d366;
+  --color-dot-red: #ef4444;
+  --color-dot-yellow: #eab308;
+  --color-dot-green: #22c55e;
 
   --font-sans: var(--font-inter, 'Inter'), 'Helvetica', 'Arial', sans-serif;
 }
@@ -27,23 +27,27 @@
 }
 
 html {
-  background-color: #F1F1EF;
+  background-color: #f1f1ef;
 }
 
 body {
   font-family: var(--font-sans);
-  color: #02090A;
-  background-color: #F1F1EF;
+  color: #02090a;
+  background-color: #f1f1ef;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   font-size: 16px !important;
 }
 
 @media (min-width: 1024px) {
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     font-size: inherit !important;
   }
 
@@ -53,7 +57,9 @@ input, textarea, select {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

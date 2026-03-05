@@ -28,7 +28,8 @@ export default function CadastroPage() {
   function validateField(field: string, value: string) {
     const result = cadastroSchema.safeParse({ ...form, [field]: value })
     if (!result.success) {
-      const fieldError = result.error.flatten().fieldErrors[field as keyof typeof form]
+      const fieldError =
+        result.error.flatten().fieldErrors[field as keyof typeof form]
       setErrors((prev) => ({
         ...prev,
         [field]: fieldError?.[0] || '',
@@ -66,12 +67,15 @@ export default function CadastroPage() {
       if (!data.user) throw new Error('Erro ao criar conta')
 
       // Usa upsert para evitar erro se o profile já existir (trigger ou race condition)
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: data.user.id,
-        nome: form.nome,
-        nome_loja: '',
-        telefone: form.telefone,
-      }, { onConflict: 'id' })
+      const { error: profileError } = await supabase.from('profiles').upsert(
+        {
+          id: data.user.id,
+          nome: form.nome,
+          nome_loja: '',
+          telefone: form.telefone,
+        },
+        { onConflict: 'id' }
+      )
 
       // Ignora erro de profile se a conta foi criada — o setup vai completar depois
       if (profileError) {
@@ -97,7 +101,12 @@ export default function CadastroPage() {
       <div className="min-h-screen flex flex-col justify-center px-6 py-12">
         <div className="w-full max-w-sm lg:max-w-md mx-auto">
           <div className="flex justify-center mb-8">
-            <LogoAnimated width={192} height={192} className="h-48 w-auto" priority />
+            <LogoAnimated
+              width={192}
+              height={192}
+              className="h-48 w-auto"
+              priority
+            />
           </div>
           <p className="text-sm text-text-secondary mt-1 mb-8">
             Organize seu fiado digital

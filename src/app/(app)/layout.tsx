@@ -59,7 +59,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           setLoading(true)
         }
 
-        const { data: { user } } = await supabase.auth.getUser()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
 
         if (!user) {
           if (!active) return
@@ -86,7 +88,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         document.addEventListener('visibilitychange', handleVisibilityChange)
         removeWindowListeners = () => {
           window.removeEventListener('focus', refreshProfile)
-          document.removeEventListener('visibilitychange', handleVisibilityChange)
+          document.removeEventListener(
+            'visibilitychange',
+            handleVisibilityChange
+          )
         }
 
         profileChannel = supabase
@@ -156,9 +161,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-bg-app">
       <Sidebar />
       <div className="pb-20 lg:pb-0 lg:ml-[240px]">
-        <div className="lg:max-w-4xl lg:mx-auto lg:px-8">
-          {children}
-        </div>
+        <div className="lg:max-w-4xl lg:mx-auto lg:px-8">{children}</div>
       </div>
       <BottomNav />
       <PwaUpdateNotification />

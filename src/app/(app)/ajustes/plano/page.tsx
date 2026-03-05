@@ -52,7 +52,9 @@ export default function PlanoPage() {
   useEffect(() => {
     async function getEmail() {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (user?.email) setEmail(user.email)
     }
     getEmail()
@@ -66,7 +68,8 @@ export default function PlanoPage() {
   const DIAS_TRIAL = 14
   const diasUsados = Math.max(0, DIAS_TRIAL - diasRestantes)
   const progresso = Math.min(100, (diasUsados / DIAS_TRIAL) * 100)
-  const trialAcabando = !assinaturaAtiva && diasRestantes <= 3 && diasRestantes > 0
+  const trialAcabando =
+    !assinaturaAtiva && diasRestantes <= 3 && diasRestantes > 0
 
   return (
     <PageTransition>
@@ -89,7 +92,8 @@ export default function PlanoPage() {
                 Assinatura ativa
               </p>
               <p className="text-sm text-[#6B7280]">
-                Seu acesso está liberado. O app não vai mais exibir contagem do período grátis enquanto a assinatura estiver ativa.
+                Seu acesso está liberado. O app não vai mais exibir contagem do
+                período grátis enquanto a assinatura estiver ativa.
               </p>
             </>
           ) : (
@@ -100,8 +104,9 @@ export default function PlanoPage() {
 
               <div className="h-2 bg-zinc-200 rounded-full w-full mb-2">
                 <div
-                  className={`h-2 rounded-full transition-all ${trialAcabando ? 'bg-red-500' : 'bg-black'
-                    }`}
+                  className={`h-2 rounded-full transition-all ${
+                    trialAcabando ? 'bg-red-500' : 'bg-black'
+                  }`}
                   style={{ width: `${progresso}%` }}
                 />
               </div>
@@ -119,7 +124,9 @@ export default function PlanoPage() {
 
         {/* O que está incluso */}
         <div className="mt-6">
-          <p className="text-sm font-semibold text-[#02090A] mb-3">O que está incluso:</p>
+          <p className="text-sm font-semibold text-[#02090A] mb-3">
+            O que está incluso:
+          </p>
           <Card>
             <div className="space-y-3">
               {FEATURES.map((feature) => (
@@ -137,7 +144,9 @@ export default function PlanoPage() {
           <Card className="mt-6">
             <div className="text-center py-2">
               <p className="text-2xl font-bold text-[#02090A]">R$ 29,90/mês</p>
-              <p className="text-xs text-[#9CA3AF] mt-1">Cancele quando quiser.</p>
+              <p className="text-xs text-[#9CA3AF] mt-1">
+                Cancele quando quiser.
+              </p>
 
               <Button
                 onClick={() => {

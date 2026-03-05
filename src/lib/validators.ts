@@ -32,11 +32,15 @@ export const clienteSchema = z.object({
 export const notaSchema = z.object({
   cliente_id: z.string().uuid(),
   descricao: z.string().optional(),
-  itens: z.array(z.object({
-    descricao: z.string(),
-    quantidade: z.number().positive(),
-    valor_unitario: z.number().positive(),
-  })).optional(),
+  itens: z
+    .array(
+      z.object({
+        descricao: z.string(),
+        quantidade: z.number().positive(),
+        valor_unitario: z.number().positive(),
+      })
+    )
+    .optional(),
   valor: z.number().positive('Valor deve ser maior que zero'),
   data_vencimento: z.string().nullable(),
 })

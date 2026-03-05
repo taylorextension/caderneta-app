@@ -26,7 +26,9 @@ interface NotaCardProps {
     id: string
     valor: number
     descricao?: string | null
-    itens?: { descricao: string; quantidade: number; valor_unitario: number }[] | null
+    itens?:
+      | { descricao: string; quantidade: number; valor_unitario: number }[]
+      | null
     data_vencimento?: string | null
     status: 'pendente' | 'pago'
     vezes_cobrado: number
@@ -44,7 +46,10 @@ interface NotaCardProps {
   showAvatar?: boolean
   onCobrar: () => void
   onMarcarPago: () => void
-  onEdit?: (id: string, data: { descricao: string; valor: string; data_vencimento: string }) => void
+  onEdit?: (
+    id: string,
+    data: { descricao: string; valor: string; data_vencimento: string }
+  ) => void
   onDelete?: (id: string) => void
 }
 
@@ -62,8 +67,12 @@ export function NotaCard({
   const [showEditSheet, setShowEditSheet] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [editDescricao, setEditDescricao] = useState(nota.descricao || '')
-  const [editValor, setEditValor] = useState(String(Number(nota.valor).toFixed(2)).replace('.', ','))
-  const [editVencimento, setEditVencimento] = useState(nota.data_vencimento || '')
+  const [editValor, setEditValor] = useState(
+    String(Number(nota.valor).toFixed(2)).replace('.', ',')
+  )
+  const [editVencimento, setEditVencimento] = useState(
+    nota.data_vencimento || ''
+  )
   const addToast = useUIStore((s) => s.addToast)
 
   const hoje = new Date()
@@ -112,7 +121,10 @@ export function NotaCard({
     const hoje = new Date()
     const ontem = new Date(hoje)
     ontem.setDate(ontem.getDate() - 1)
-    const hora = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    const hora = date.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
     if (date.toDateString() === hoje.toDateString()) return `Hoje às ${hora}`
     if (date.toDateString() === ontem.toDateString()) return `Ontem às ${hora}`
     return `${date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} · ${hora}`
@@ -127,7 +139,11 @@ export function NotaCard({
   const handleSaveEdit = () => {
     if (!onEdit) return
     const valorNum = editValor.replace(',', '.')
-    onEdit(nota.id, { descricao: editDescricao, valor: valorNum, data_vencimento: editVencimento })
+    onEdit(nota.id, {
+      descricao: editDescricao,
+      valor: valorNum,
+      data_vencimento: editVencimento,
+    })
     setShowEditSheet(false)
     addToast({ message: 'Nota atualizada', type: 'success' })
   }
@@ -177,7 +193,10 @@ export function NotaCard({
               const AcaoIcon = getAcaoIcon(ultimaAcao.tipo)
               return <AcaoIcon className="h-3.5 w-3.5 shrink-0" />
             })()}
-            <span>{getAcaoText(ultimaAcao.tipo)} · {formatAcaoTime(ultimaAcao.created_at)}</span>
+            <span>
+              {getAcaoText(ultimaAcao.tipo)} ·{' '}
+              {formatAcaoTime(ultimaAcao.created_at)}
+            </span>
           </p>
         )}
 
@@ -207,12 +226,18 @@ export function NotaCard({
 
       {/* Payment confirmation modal */}
       <Modal open={showConfirm} onClose={() => setShowConfirm(false)}>
-        <h3 className="text-lg font-semibold mb-2 text-text-primary">Confirmar pagamento?</h3>
+        <h3 className="text-lg font-semibold mb-2 text-text-primary">
+          Confirmar pagamento?
+        </h3>
         <p className="text-sm text-text-secondary mb-6">
           {displayName} · {formatCurrencyShort(Number(nota.valor))}
         </p>
         <div className="flex gap-3">
-          <Button variant="secondary" className="flex-1" onClick={() => setShowConfirm(false)}>
+          <Button
+            variant="secondary"
+            className="flex-1"
+            onClick={() => setShowConfirm(false)}
+          >
             Cancelar
           </Button>
           <Button className="flex-1" onClick={handleConfirmarPago}>
@@ -237,7 +262,10 @@ export function NotaCard({
             value={editValor}
             onChange={(e) => {
               const numbersOnly = e.target.value.replace(/\D/g, '')
-              if (!numbersOnly) { setEditValor(''); return }
+              if (!numbersOnly) {
+                setEditValor('')
+                return
+              }
               const amount = (parseInt(numbersOnly, 10) / 100).toFixed(2)
               setEditValor(amount.replace('.', ','))
             }}
@@ -262,14 +290,28 @@ export function NotaCard({
       </BottomSheet>
 
       {/* Delete confirmation modal */}
-      <Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <h3 className="text-lg font-semibold mb-2 text-text-primary">Excluir nota?</h3>
-        <p className="text-sm text-text-secondary mb-6">Esta ação não pode ser desfeita.</p>
+      <Modal
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+      >
+        <h3 className="text-lg font-semibold mb-2 text-text-primary">
+          Excluir nota?
+        </h3>
+        <p className="text-sm text-text-secondary mb-6">
+          Esta ação não pode ser desfeita.
+        </p>
         <div className="flex gap-3">
-          <Button variant="secondary" className="flex-1" onClick={() => setShowDeleteConfirm(false)}>
+          <Button
+            variant="secondary"
+            className="flex-1"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
             Cancelar
           </Button>
-          <Button className="flex-1 !bg-red-500 !text-white" onClick={handleDeleteNota}>
+          <Button
+            className="flex-1 !bg-red-500 !text-white"
+            onClick={handleDeleteNota}
+          >
             Excluir
           </Button>
         </div>

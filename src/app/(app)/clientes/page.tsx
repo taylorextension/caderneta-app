@@ -6,7 +6,7 @@ import { motion } from 'motion/react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
-import { useDataStore } from '@/stores/data-store'
+import { useDataStore, type CachedClienteResumo } from '@/stores/data-store'
 import { PageTransition } from '@/components/layout/page-transition'
 import { FAB } from '@/components/layout/fab'
 import { Card } from '@/components/ui/card'
@@ -16,17 +16,6 @@ import { UsersIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { formatCurrencyShort } from '@/lib/format'
 import { cn } from '@/lib/cn'
 
-interface ClienteComDivida {
-  id: string
-  nome: string
-  apelido: string | null
-  telefone: string
-  total_pendente: number
-  notas_pendentes: number
-  dias_atraso_max: number | null
-  dias_para_vencer: number | null
-}
-
 type SortOption = 'divida' | 'atraso' | 'nome'
 
 export default function ClientesPage() {
@@ -35,7 +24,9 @@ export default function ClientesPage() {
   const addToast = useUIStore((s) => s.addToast)
   const cachedClientes = useDataStore((s) => s.clientesData)
   const setCachedClientes = useDataStore((s) => s.setClientesData)
-  const [clientes, setClientes] = useState<ClienteComDivida[]>((cachedClientes as ClienteComDivida[]) || [])
+  const [clientes, setClientes] = useState<CachedClienteResumo[]>(
+    cachedClientes || []
+  )
   const [loading, setLoading] = useState(!cachedClientes)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortOption>('divida')
@@ -64,8 +55,10 @@ export default function ClientesPage() {
       if (nError) throw nError
 
       const hoje = new Date()
-      const result: ClienteComDivida[] = (clientesData || []).map((c) => {
-        const notasCliente = (notasData || []).filter((n) => n.cliente_id === c.id)
+      const result: CachedClienteResumo[] = (clientesData || []).map((c) => {
+        const notasCliente = (notasData || []).filter(
+          (n) => n.cliente_id === c.id
+        )
         const total = notasCliente.reduce((acc, n) => acc + Number(n.valor), 0)
 
         const diasAtraso = notasCliente
@@ -91,8 +84,10 @@ export default function ClientesPage() {
           telefone: c.telefone,
           total_pendente: total,
           notas_pendentes: notasCliente.length,
-          dias_atraso_max: diasAtraso.length > 0 ? Math.max(...diasAtraso) : null,
-          dias_para_vencer: diasParaVencer.length > 0 ? Math.min(...diasParaVencer) : null,
+          dias_atraso_max:
+            diasAtraso.length > 0 ? Math.max(...diasAtraso) : null,
+          dias_para_vencer:
+            diasParaVencer.length > 0 ? Math.min(...diasParaVencer) : null,
         }
       })
 
@@ -103,7 +98,7 @@ export default function ClientesPage() {
     } finally {
       setLoading(false)
     }
-  }, [profile, addToast])
+  }, [profile, addToast, setCachedClientes])
 
   useEffect(() => {
     fetchClientes()
@@ -122,22 +117,34 @@ export default function ClientesPage() {
       return a.nome.localeCompare(b.nome)
     })
 
-  function getStatusDot(c: ClienteComDivida): string {
+  function getStatusDot(c: CachedClienteResumo): string {
     if (c.dias_atraso_max && c.dias_atraso_max > 0) return 'bg-dot-red'
     if (c.dias_para_vencer !== null) return 'bg-dot-yellow'
     if (c.total_pendente > 0) return 'bg-dot-yellow'
     return 'bg-dot-green'
   }
 
-  function getStatusSubtext(c: ClienteComDivida): { text: string; className: string } {
+  function getStatusSubtext(c: CachedClienteResumo): {
+    text: string
+    className: string
+  } {
     if (c.dias_atraso_max && c.dias_atraso_max > 0) {
-      return { text: `Vencida há ${c.dias_atraso_max} dia${c.dias_atraso_max > 1 ? 's' : ''}`, className: 'text-red-500' }
+      return {
+        text: `Vencida há ${c.dias_atraso_max} dia${c.dias_atraso_max > 1 ? 's' : ''}`,
+        className: 'text-red-500',
+      }
     }
     if (c.dias_para_vencer !== null) {
-      return { text: `Vence em ${c.dias_para_vencer} dia${c.dias_para_vencer > 1 ? 's' : ''}`, className: 'text-amber-600' }
+      return {
+        text: `Vence em ${c.dias_para_vencer} dia${c.dias_para_vencer > 1 ? 's' : ''}`,
+        className: 'text-amber-600',
+      }
     }
     if (c.total_pendente > 0) {
-      return { text: `${c.notas_pendentes} nota${c.notas_pendentes > 1 ? 's' : ''} pendente${c.notas_pendentes > 1 ? 's' : ''}`, className: 'text-[#6B7280]' }
+      return {
+        text: `${c.notas_pendentes} nota${c.notas_pendentes > 1 ? 's' : ''} pendente${c.notas_pendentes > 1 ? 's' : ''}`,
+        className: 'text-[#6B7280]',
+      }
     }
     return { text: 'Tudo pago', className: 'text-[#6B7280]' }
   }
@@ -208,7 +215,12 @@ export default function ClientesPage() {
                   >
                     <div className="flex items-center gap-2">
                       {/* Dot de status */}
-                      <span className={cn('h-2 w-2 rounded-full shrink-0', getStatusDot(c))} />
+                      <span
+                        className={cn(
+                          'h-2 w-2 rounded-full shrink-0',
+                          getStatusDot(c)
+                        )}
+                      />
 
                       {/* Avatar */}
                       <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center text-xs font-semibold shrink-0">
@@ -221,7 +233,9 @@ export default function ClientesPage() {
                           {c.nome}
                         </p>
                         <p className="text-sm text-[#6B7280]">
-                          {formatCurrencyShort(c.total_pendente)} · {c.notas_pendentes} nota{c.notas_pendentes > 1 ? 's' : ''}
+                          {formatCurrencyShort(c.total_pendente)} ·{' '}
+                          {c.notas_pendentes} nota
+                          {c.notas_pendentes > 1 ? 's' : ''}
                         </p>
                       </div>
                     </div>
@@ -255,6 +269,7 @@ export default function ClientesPage() {
 
 import dynamic from 'next/dynamic'
 const WizardVenda = dynamic(
-  () => import('@/components/vendas/wizard-venda').then((mod) => mod.WizardVenda),
+  () =>
+    import('@/components/vendas/wizard-venda').then((mod) => mod.WizardVenda),
   { ssr: false }
 )

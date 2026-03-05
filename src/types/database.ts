@@ -58,7 +58,12 @@ export interface Cobranca {
   enviado_em: string
 }
 
-export type EventoTipo = 'link_aberto' | 'pix_copiado' | 'tempo_pagina' | 'marcou_pago' | 'desfez_pago'
+export type EventoTipo =
+  | 'link_aberto'
+  | 'pix_copiado'
+  | 'tempo_pagina'
+  | 'marcou_pago'
+  | 'desfez_pago'
 
 export interface Evento {
   id: string

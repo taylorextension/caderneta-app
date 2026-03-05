@@ -2,13 +2,17 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { XMarkIcon, CameraIcon, PlusIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import {
+  XMarkIcon,
+  CameraIcon,
+  PlusIcon,
+  XCircleIcon,
+} from '@heroicons/react/24/outline'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
 import { Avatar } from '@/components/ui/avatar'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
@@ -21,7 +25,11 @@ interface WizardVendaProps {
   preselectedClienteId?: string
 }
 
-export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVendaProps) {
+export function WizardVenda({
+  open,
+  onClose,
+  preselectedClienteId,
+}: WizardVendaProps) {
   const profile = useAuthStore((s) => s.profile)
   const addToast = useUIStore((s) => s.addToast)
   const [step, setStep] = useState(preselectedClienteId ? 2 : 1)
@@ -99,7 +107,11 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
     }
   }
 
-  async function compressImage(base64: string, maxWidth = 1200, quality = 0.7): Promise<string> {
+  async function compressImage(
+    base64: string,
+    maxWidth = 1200,
+    quality = 0.7
+  ): Promise<string> {
     return new Promise((resolve) => {
       const img = new Image()
       img.onload = () => {
@@ -135,7 +147,9 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
       const parsedTotal = Number(data.total)
       if (parsedTotal > 0) {
         setValor(parsedTotal.toFixed(2))
-        setValorDisplay(formatCurrencyInput(parsedTotal.toFixed(2).replace('.', '')))
+        setValorDisplay(
+          formatCurrencyInput(parsedTotal.toFixed(2).replace('.', ''))
+        )
         hasData = true
       }
 
@@ -154,7 +168,10 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
       if (hasData) {
         addToast({ message: 'Dados extraídos da nota!', type: 'success' })
       } else {
-        addToast({ message: 'Não foi possível ler os valores da nota', type: 'warning' })
+        addToast({
+          message: 'Não foi possível ler os valores da nota',
+          type: 'warning',
+        })
       }
     } catch {
       addToast({ message: 'Erro ao processar imagem', type: 'error' })
@@ -171,11 +188,18 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
     setItens(itens.filter((_, i) => i !== index))
   }
 
-  function updateItem(index: number, field: keyof ItemNota, value: string | number) {
+  function updateItem(
+    index: number,
+    field: keyof ItemNota,
+    value: string | number
+  ) {
     const updated = [...itens]
     updated[index] = { ...updated[index], [field]: value }
     setItens(updated)
-    const total = updated.reduce((acc, item) => acc + item.quantidade * item.valor_unitario, 0)
+    const total = updated.reduce(
+      (acc, item) => acc + item.quantidade * item.valor_unitario,
+      0
+    )
     setValor(total.toFixed(2))
     setValorDisplay(formatCurrencyInput(total.toFixed(2).replace('.', '')))
   }
@@ -290,8 +314,9 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
           {[1, 2, 3].map((s) => (
             <div
               key={s}
-              className={`h-2 w-2 rounded-full transition-colors ${s === step ? 'bg-black' : 'bg-border'
-                }`}
+              className={`h-2 w-2 rounded-full transition-colors ${
+                s === step ? 'bg-black' : 'bg-border'
+              }`}
             />
           ))}
         </div>
@@ -333,7 +358,9 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                     <div className="text-left">
                       <p className="text-sm font-medium">{c.nome}</p>
                       {c.apelido && (
-                        <p className="text-xs text-text-secondary">{c.apelido}</p>
+                        <p className="text-xs text-text-secondary">
+                          {c.apelido}
+                        </p>
                       )}
                     </div>
                   </button>
@@ -405,8 +432,13 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
               {showItens && (
                 <div className="mt-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-text-secondary">Itens</span>
-                    <button onClick={addItem} className="text-xs font-medium text-text-primary">
+                    <span className="text-xs font-medium text-text-secondary">
+                      Itens
+                    </span>
+                    <button
+                      onClick={addItem}
+                      className="text-xs font-medium text-text-primary"
+                    >
                       + Adicionar
                     </button>
                   </div>
@@ -414,21 +446,35 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                     <div key={i} className="flex items-center gap-2 mb-2">
                       <input
                         value={item.descricao}
-                        onChange={(e) => updateItem(i, 'descricao', e.target.value)}
+                        onChange={(e) =>
+                          updateItem(i, 'descricao', e.target.value)
+                        }
                         placeholder="Item"
                         className="flex-1 h-10 bg-transparent border-b border-border text-sm outline-none focus:border-b-black"
                       />
                       <input
                         type="number"
                         value={item.quantidade}
-                        onChange={(e) => updateItem(i, 'quantidade', parseInt(e.target.value) || 1)}
+                        onChange={(e) =>
+                          updateItem(
+                            i,
+                            'quantidade',
+                            parseInt(e.target.value) || 1
+                          )
+                        }
                         className="w-12 h-10 bg-transparent border-b border-border text-sm text-center outline-none focus:border-b-black"
                         inputMode="numeric"
                       />
                       <input
                         type="number"
                         value={item.valor_unitario || ''}
-                        onChange={(e) => updateItem(i, 'valor_unitario', parseFloat(e.target.value) || 0)}
+                        onChange={(e) =>
+                          updateItem(
+                            i,
+                            'valor_unitario',
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
                         placeholder="R$"
                         className="w-20 h-10 bg-transparent border-b border-border text-sm outline-none focus:border-b-black"
                         inputMode="decimal"
@@ -480,10 +526,11 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                     <button
                       key={opt.days}
                       onClick={() => selectVencimento(opt.days)}
-                      className={`flex-1 min-w-[80px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${selected
-                        ? 'bg-black text-white border-black'
-                        : 'bg-white text-text-primary border-divider'
-                        }`}
+                      className={`flex-1 min-w-[80px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
+                        selected
+                          ? 'bg-black text-white border-black'
+                          : 'bg-white text-text-primary border-divider'
+                      }`}
                     >
                       {opt.label}
                     </button>
@@ -495,10 +542,11 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
               <div className="flex flex-wrap gap-2 mb-4">
                 {/* Data específica */}
                 <label
-                  className={`flex-1 min-w-[120px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer text-center ${showCustomDate
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white text-text-primary border-divider'
-                    }`}
+                  className={`flex-1 min-w-[120px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer text-center ${
+                    showCustomDate
+                      ? 'bg-black text-white border-black'
+                      : 'bg-white text-text-primary border-divider'
+                  }`}
                 >
                   {showCustomDate && vencimentoCustom
                     ? formatDueDate(vencimentoCustom)
@@ -522,10 +570,11 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
                 {/* À vista */}
                 <button
                   onClick={() => selectVencimento(null)}
-                  className={`flex-1 min-w-[100px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${!vencimento && !showCustomDate
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white text-text-primary border-divider'
-                    }`}
+                  className={`flex-1 min-w-[100px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
+                    !vencimento && !showCustomDate
+                      ? 'bg-black text-white border-black'
+                      : 'bg-white text-text-primary border-divider'
+                  }`}
                 >
                   À vista
                 </button>
@@ -563,7 +612,10 @@ export function WizardVenda({ open, onClose, preselectedClienteId }: WizardVenda
         </AnimatePresence>
       </div>
 
-      <BottomSheet open={showNovoCliente} onClose={() => setShowNovoCliente(false)}>
+      <BottomSheet
+        open={showNovoCliente}
+        onClose={() => setShowNovoCliente(false)}
+      >
         <h3 className="text-lg font-semibold mb-4">Novo cliente</h3>
         <div className="space-y-4">
           <Input

@@ -5,7 +5,10 @@ export interface AccessProfile {
   trial_fim: string | null
 }
 
-export function getTrialTimeLeftMs(profile: AccessProfile | null | undefined, nowMs = Date.now()) {
+export function getTrialTimeLeftMs(
+  profile: AccessProfile | null | undefined,
+  nowMs = Date.now()
+) {
   if (!profile || profile.assinatura_ativa || !profile.trial_fim) {
     return 0
   }
@@ -18,7 +21,10 @@ export function getTrialTimeLeftMs(profile: AccessProfile | null | undefined, no
   return Math.max(0, trialFimMs - nowMs)
 }
 
-export function getTrialDaysRemaining(profile: AccessProfile | null | undefined, nowMs = Date.now()) {
+export function getTrialDaysRemaining(
+  profile: AccessProfile | null | undefined,
+  nowMs = Date.now()
+) {
   const timeLeftMs = getTrialTimeLeftMs(profile, nowMs)
 
   if (timeLeftMs <= 0) {
@@ -28,7 +34,10 @@ export function getTrialDaysRemaining(profile: AccessProfile | null | undefined,
   return Math.ceil(timeLeftMs / DAY_IN_MS)
 }
 
-export function hasAppAccess(profile: AccessProfile | null | undefined, nowMs = Date.now()) {
+export function hasAppAccess(
+  profile: AccessProfile | null | undefined,
+  nowMs = Date.now()
+) {
   if (!profile) {
     return false
   }

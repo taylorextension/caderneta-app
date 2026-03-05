@@ -16,7 +16,7 @@ import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { CobrarSheet } from '@/components/cobrancas/cobrar-sheet'
 import { NotaCard } from '@/components/notas/nota-card'
 import { PhoneInput } from '@/components/ui/phone-input'
-import { ArrowLeftIcon, CheckIcon, PencilIcon } from '@heroicons/react/24/solid'
+import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/solid'
 import { formatCurrencyShort, formatRelativeDate } from '@/lib/format'
 import type { Cliente, Nota, NotaComCliente } from '@/types/database'
 
@@ -25,6 +25,20 @@ interface NotaComUltimaAcao extends Nota {
     tipo: string
     created_at: string
   } | null
+}
+
+interface EventoResumo {
+  tipo: string
+  created_at: string
+}
+
+interface CobrancaResumo {
+  nota_id: string
+  enviado_em: string
+}
+
+interface NotaPendenteRow extends Nota {
+  eventos: EventoResumo[] | null
 }
 
 export default function ClienteDetailPage() {
@@ -68,17 +82,24 @@ export default function ClienteDetailPage() {
 
       const { data: pendentesData } = await supabase
         .from('notas')
-        .select(`
+        .select(
+          `
           *,
           eventos:eventos(tipo, created_at)
-        `)
+        `
+        )
         .eq('cliente_id', id)
         .eq('status', 'pendente')
         .order('data_vencimento', { ascending: true })
 
+      const pendentesRows = (pendentesData || []) as NotaPendenteRow[]
+
       // Also fetch cobrancas for these notes
-      const pendentesIds = (pendentesData || []).map((n: any) => n.id)
-      let cobrancasMap = new Map<string, { tipo: string; created_at: string }>()
+      const pendentesIds = pendentesRows.map((n) => n.id)
+      const cobrancasMap = new Map<
+        string,
+        { tipo: string; created_at: string }
+      >()
       if (pendentesIds.length > 0) {
         const { data: cobrancasData } = await supabase
           .from('cobrancas')
@@ -86,28 +107,36 @@ export default function ClienteDetailPage() {
           .in('nota_id', pendentesIds)
           .order('enviado_em', { ascending: false })
 
-          ; (cobrancasData || []).forEach((c: any) => {
-            if (!cobrancasMap.has(c.nota_id)) {
-              cobrancasMap.set(c.nota_id, {
-                tipo: 'lembrete_enviado',
-                created_at: c.enviado_em,
-              })
-            }
-          })
+        ;(cobrancasData || []).forEach((cobranca) => {
+          const c = cobranca as CobrancaResumo
+          if (!cobrancasMap.has(c.nota_id)) {
+            cobrancasMap.set(c.nota_id, {
+              tipo: 'lembrete_enviado',
+              created_at: c.enviado_em,
+            })
+          }
+        })
       }
 
-      const pendentesComAcao = (pendentesData || []).map((nota: any) => {
-        const eventos = nota.eventos || []
-        // Merge cobrancas as events
-        const cobranca = cobrancasMap.get(nota.id)
-        const allEvents = cobranca ? [...eventos, cobranca] : eventos
-        const ultimaAcao = allEvents.length > 0
-          ? allEvents.sort((a: any, b: any) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          )[0]
-          : null
-        return { ...nota, ultimaAcao }
-      })
+      const pendentesComAcao: NotaComUltimaAcao[] = pendentesRows.map(
+        (nota) => {
+          const eventos = nota.eventos || []
+          // Merge cobrancas as events
+          const cobranca = cobrancasMap.get(nota.id)
+          const allEvents = cobranca ? [...eventos, cobranca] : eventos
+          const ultimaAcao =
+            allEvents.length > 0
+              ? allEvents.sort(
+                  (a, b) =>
+                    new Date(b.created_at).getTime() -
+                    new Date(a.created_at).getTime()
+                )[0]
+              : null
+          const { eventos: _eventos, ...notaBase } = nota
+          void _eventos
+          return { ...notaBase, ultimaAcao }
+        }
+      )
 
       setPendentes(pendentesComAcao)
 
@@ -118,7 +147,7 @@ export default function ClienteDetailPage() {
         .eq('status', 'pago')
         .order('data_pagamento', { ascending: false })
 
-      setPagas(pagasData || [])
+      setPagas((pagasData || []) as Nota[])
     } catch {
       addToast({ message: 'Erro ao carregar cliente', type: 'error' })
     } finally {
@@ -136,85 +165,126 @@ export default function ClienteDetailPage() {
     const supabase = createClient()
     const channel = supabase
       .channel(`cliente-${id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notas', filter: `cliente_id=eq.${id}` }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'eventos', filter: `cliente_id=eq.${id}` }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cobrancas', filter: `cliente_id=eq.${id}` }, () => fetchData())
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notas',
+          filter: `cliente_id=eq.${id}`,
+        },
+        () => fetchData()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'eventos',
+          filter: `cliente_id=eq.${id}`,
+        },
+        () => fetchData()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cobrancas',
+          filter: `cliente_id=eq.${id}`,
+        },
+        () => fetchData()
+      )
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [profile, id, fetchData])
 
-  const handleMarcarPago = useCallback(async (nota: Nota) => {
-    if (!profile) return
-    try {
-      const supabase = createClient()
-      await supabase
-        .from('notas')
-        .update({ status: 'pago', data_pagamento: new Date().toISOString() })
-        .eq('id', nota.id)
+  const handleMarcarPago = useCallback(
+    async (nota: Nota) => {
+      if (!profile) return
+      try {
+        const supabase = createClient()
+        await supabase
+          .from('notas')
+          .update({ status: 'pago', data_pagamento: new Date().toISOString() })
+          .eq('id', nota.id)
 
-      await supabase.from('eventos').insert({
-        nota_id: nota.id,
-        cliente_id: id,
-        user_id: profile.id,
-        tipo: 'marcou_pago',
-      })
-
-      addToast({
-        message: 'Pagamento registrado!',
-        type: 'success',
-        action: {
-          label: 'Desfazer',
-          onClick: async () => {
-            await supabase
-              .from('notas')
-              .update({ status: 'pendente', data_pagamento: null })
-              .eq('id', nota.id)
-            await supabase.from('eventos').insert({
-              nota_id: nota.id,
-              cliente_id: id,
-              user_id: profile.id,
-              tipo: 'desfez_pago',
-            })
-            fetchData()
-          },
-        },
-      })
-
-      fetchData()
-    } catch {
-      addToast({ message: 'Erro ao atualizar', type: 'error' })
-    }
-  }, [profile, id, addToast, fetchData])
-
-  const handleEditNota = useCallback(async (notaId: string, data: { descricao: string; valor: string; data_vencimento: string }) => {
-    if (!profile) return
-    try {
-      const supabase = createClient()
-      await supabase
-        .from('notas')
-        .update({
-          descricao: data.descricao || null,
-          valor: parseFloat(data.valor) || 0,
-          data_vencimento: data.data_vencimento || null,
+        await supabase.from('eventos').insert({
+          nota_id: nota.id,
+          cliente_id: id,
+          user_id: profile.id,
+          tipo: 'marcou_pago',
         })
-        .eq('id', notaId)
-      fetchData()
-    } catch {
-      addToast({ message: 'Erro ao atualizar nota', type: 'error' })
-    }
-  }, [profile, addToast, fetchData])
 
-  const handleDeleteNota = useCallback(async (notaId: string) => {
-    if (!profile) return
-    try {
-      const supabase = createClient()
-      await supabase.from('notas').delete().eq('id', notaId)
-      fetchData()
-    } catch {
-      addToast({ message: 'Erro ao excluir nota', type: 'error' })
-    }
-  }, [profile, addToast, fetchData])
+        addToast({
+          message: 'Pagamento registrado!',
+          type: 'success',
+          action: {
+            label: 'Desfazer',
+            onClick: async () => {
+              await supabase
+                .from('notas')
+                .update({ status: 'pendente', data_pagamento: null })
+                .eq('id', nota.id)
+              await supabase.from('eventos').insert({
+                nota_id: nota.id,
+                cliente_id: id,
+                user_id: profile.id,
+                tipo: 'desfez_pago',
+              })
+              fetchData()
+            },
+          },
+        })
+
+        fetchData()
+      } catch {
+        addToast({ message: 'Erro ao atualizar', type: 'error' })
+      }
+    },
+    [profile, id, addToast, fetchData]
+  )
+
+  const handleEditNota = useCallback(
+    async (
+      notaId: string,
+      data: { descricao: string; valor: string; data_vencimento: string }
+    ) => {
+      if (!profile) return
+      try {
+        const supabase = createClient()
+        await supabase
+          .from('notas')
+          .update({
+            descricao: data.descricao || null,
+            valor: parseFloat(data.valor) || 0,
+            data_vencimento: data.data_vencimento || null,
+          })
+          .eq('id', notaId)
+        fetchData()
+      } catch {
+        addToast({ message: 'Erro ao atualizar nota', type: 'error' })
+      }
+    },
+    [profile, addToast, fetchData]
+  )
+
+  const handleDeleteNota = useCallback(
+    async (notaId: string) => {
+      if (!profile) return
+      try {
+        const supabase = createClient()
+        await supabase.from('notas').delete().eq('id', notaId)
+        fetchData()
+      } catch {
+        addToast({ message: 'Erro ao excluir nota', type: 'error' })
+      }
+    },
+    [profile, addToast, fetchData]
+  )
 
   const handleEditCliente = async () => {
     if (!profile || !cliente) return
@@ -260,30 +330,33 @@ export default function ClienteDetailPage() {
     setShowEditCliente(true)
   }
 
-  const notaToComCliente = useCallback((nota: Nota): NotaComCliente => {
-    const hoje = new Date()
-    const venc = nota.data_vencimento
-      ? new Date(nota.data_vencimento + 'T00:00:00')
-      : null
-    const diasAtraso = venc
-      ? Math.floor((hoje.getTime() - venc.getTime()) / 86400000)
-      : 0
+  const notaToComCliente = useCallback(
+    (nota: Nota): NotaComCliente => {
+      const hoje = new Date()
+      const venc = nota.data_vencimento
+        ? new Date(nota.data_vencimento + 'T00:00:00')
+        : null
+      const diasAtraso = venc
+        ? Math.floor((hoje.getTime() - venc.getTime()) / 86400000)
+        : 0
 
-    return {
-      id: nota.id,
-      valor: Number(nota.valor),
-      data_vencimento: nota.data_vencimento || '',
-      itens: nota.itens,
-      descricao: nota.descricao,
-      status: nota.status as 'pendente' | 'pago',
-      vezes_cobrado: nota.vezes_cobrado,
-      cliente_id: id,
-      cliente_nome: cliente?.nome || '',
-      apelido: cliente?.apelido || null,
-      cliente_telefone: cliente?.telefone || '',
-      dias_atraso: diasAtraso > 0 ? diasAtraso : undefined,
-    }
-  }, [cliente, id])
+      return {
+        id: nota.id,
+        valor: Number(nota.valor),
+        data_vencimento: nota.data_vencimento || '',
+        itens: nota.itens,
+        descricao: nota.descricao,
+        status: nota.status as 'pendente' | 'pago',
+        vezes_cobrado: nota.vezes_cobrado,
+        cliente_id: id,
+        cliente_nome: cliente?.nome || '',
+        apelido: cliente?.apelido || null,
+        cliente_telefone: cliente?.telefone || '',
+        dias_atraso: diasAtraso > 0 ? diasAtraso : undefined,
+      }
+    },
+    [cliente, id]
+  )
 
   const handleCobrarTudo = useCallback(() => {
     const notasPendentes = pendentes.map(notaToComCliente)
@@ -292,7 +365,7 @@ export default function ClienteDetailPage() {
     }
   }, [pendentes, notaToComCliente])
 
-  const temVencida = pendentes.some(n => {
+  const temVencida = pendentes.some((n) => {
     if (!n.data_vencimento) return false
     return new Date(n.data_vencimento + 'T00:00:00') < new Date()
   })
@@ -323,7 +396,9 @@ export default function ClienteDetailPage() {
         </button>
 
         <div className="flex items-center gap-2">
-          <h1 className="text-xl lg:text-2xl font-semibold text-[#02090A] flex-1">{cliente.nome}</h1>
+          <h1 className="text-xl lg:text-2xl font-semibold text-[#02090A] flex-1">
+            {cliente.nome}
+          </h1>
           <button
             onClick={openEditCliente}
             className="shrink-0 px-2.5 py-1 rounded-full bg-black/5 text-[11px] font-medium text-text-secondary hover:bg-black/10 transition-colors"
@@ -339,11 +414,15 @@ export default function ClienteDetailPage() {
         <Card className="flex mt-4">
           <div className="flex-1 pr-4 border-r border-[#E5E5E5]">
             <p className="text-xs text-[#9CA3AF]">Deve</p>
-            <p className="text-2xl font-bold text-[#02090A]">{formatCurrencyShort(totalPendente)}</p>
+            <p className="text-2xl font-bold text-[#02090A]">
+              {formatCurrencyShort(totalPendente)}
+            </p>
           </div>
           <div className="flex-1 pl-4">
             <p className="text-xs text-[#9CA3AF]">Já pagou</p>
-            <p className="text-2xl font-bold text-[#02090A]">{formatCurrencyShort(totalPago)}</p>
+            <p className="text-2xl font-bold text-[#02090A]">
+              {formatCurrencyShort(totalPago)}
+            </p>
           </div>
         </Card>
 
@@ -367,18 +446,19 @@ export default function ClienteDetailPage() {
         </div>
 
         <div className="lg:grid lg:grid-cols-3 lg:gap-8">
-
           {/* Seção Pendentes */}
           {pendentes.length > 0 && (
             <section className="mt-8">
               <div className="flex items-center gap-2 mb-3">
-                <div className={`w-2 h-2 rounded-full ${temVencida ? 'bg-[#EF4444]' : 'bg-[#EAB308]'}`} />
+                <div
+                  className={`w-2 h-2 rounded-full ${temVencida ? 'bg-[#EF4444]' : 'bg-[#EAB308]'}`}
+                />
                 <h3 className="text-sm font-semibold text-[#02090A]">
                   Pendentes · {pendentes.length}
                 </h3>
               </div>
               <div className="space-y-3">
-                {pendentes.map((nota: any) => (
+                {pendentes.map((nota) => (
                   <Card key={nota.id}>
                     <NotaCard
                       nota={{
@@ -422,7 +502,12 @@ export default function ClienteDetailPage() {
                           {nota.descricao || 'Compra'}
                         </p>
                         <p className="text-sm text-[#6B7280]">
-                          {formatCurrencyShort(Number(nota.valor))} · Pago {nota.data_pagamento ? formatRelativeDate(nota.data_pagamento.split('T')[0]) : ''}
+                          {formatCurrencyShort(Number(nota.valor))} · Pago{' '}
+                          {nota.data_pagamento
+                            ? formatRelativeDate(
+                                nota.data_pagamento.split('T')[0]
+                              )
+                            : ''}
                         </p>
                       </div>
                       <CheckIcon className="h-4 w-4 text-green-500" />
@@ -458,7 +543,10 @@ export default function ClienteDetailPage() {
       )}
 
       {/* Edit Client BottomSheet */}
-      <BottomSheet open={showEditCliente} onClose={() => setShowEditCliente(false)}>
+      <BottomSheet
+        open={showEditCliente}
+        onClose={() => setShowEditCliente(false)}
+      >
         <h3 className="text-lg font-semibold mb-4">Editar cliente</h3>
         <div className="space-y-4">
           <Input
@@ -491,8 +579,13 @@ export default function ClienteDetailPage() {
       </BottomSheet>
 
       {/* Delete Client Confirmation */}
-      <Modal open={showDeleteCliente} onClose={() => setShowDeleteCliente(false)}>
-        <h3 className="text-lg font-semibold mb-2 text-text-primary">Excluir cliente?</h3>
+      <Modal
+        open={showDeleteCliente}
+        onClose={() => setShowDeleteCliente(false)}
+      >
+        <h3 className="text-lg font-semibold mb-2 text-text-primary">
+          Excluir cliente?
+        </h3>
         <p className="text-sm text-text-secondary mb-6">
           O cliente será removido da sua lista. As notas serão mantidas.
         </p>
@@ -518,6 +611,7 @@ export default function ClienteDetailPage() {
 
 import dynamic from 'next/dynamic'
 const WizardVenda = dynamic(
-  () => import('@/components/vendas/wizard-venda').then((mod) => mod.WizardVenda),
+  () =>
+    import('@/components/vendas/wizard-venda').then((mod) => mod.WizardVenda),
   { ssr: false }
 )

@@ -28,7 +28,18 @@ const sizeStyles: Record<ButtonSize, string> = {
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'default', loading, disabled, children, ...props }, ref) => {
+  (
+    {
+      className,
+      variant = 'primary',
+      size = 'default',
+      loading,
+      disabled,
+      children,
+      ...props
+    },
+    ref
+  ) => {
     return (
       <motion.button
         ref={ref}

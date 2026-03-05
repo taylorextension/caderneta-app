@@ -11,10 +11,7 @@ export function useCamera() {
   }, [])
 
   const handleCapture = useCallback(
-    async (
-      file: File,
-      onResult: (base64: string) => void
-    ) => {
+    async (file: File, onResult: (base64: string) => void) => {
       setCapturing(true)
       try {
         const reader = new FileReader()

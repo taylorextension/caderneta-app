@@ -4,14 +4,14 @@ import Script from 'next/script'
 import * as fbq from '@/lib/fpixel'
 
 export function MetaPixel() {
-    if (!fbq.FB_PIXEL_ID) return null
+  if (!fbq.FB_PIXEL_ID) return null
 
-    return (
-        <Script
-            id="fb-pixel"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-                __html: `
+  return (
+    <Script
+      id="fb-pixel"
+      strategy="afterInteractive"
+      dangerouslySetInnerHTML={{
+        __html: `
           !function(f,b,e,v,n,t,s)
           {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
           n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -22,7 +22,7 @@ export function MetaPixel() {
           'https://connect.facebook.net/en_US/fbevents.js');
           fbq('init', '${fbq.FB_PIXEL_ID}');
         `,
-            }}
-        />
-    )
+      }}
+    />
+  )
 }

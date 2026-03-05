@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useDragControls } from 'motion/react'
 
@@ -10,28 +10,34 @@ interface BottomSheetProps {
   children: ReactNode
 }
 
+const DESKTOP_MEDIA_QUERY = '(min-width: 1024px)'
+
+function subscribeToDesktopChange(onStoreChange: () => void) {
+  if (typeof window === 'undefined') return () => {}
+
+  const mql = window.matchMedia(DESKTOP_MEDIA_QUERY)
+  mql.addEventListener('change', onStoreChange)
+
+  return () => mql.removeEventListener('change', onStoreChange)
+}
+
+function getDesktopSnapshot() {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia(DESKTOP_MEDIA_QUERY).matches
+}
+
 function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState(false)
-  useEffect(() => {
-    const mql = window.matchMedia('(min-width: 1024px)')
-    setIsDesktop(mql.matches)
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
-    mql.addEventListener('change', handler)
-    return () => mql.removeEventListener('change', handler)
-  }, [])
-  return isDesktop
+  return useSyncExternalStore(
+    subscribeToDesktopChange,
+    getDesktopSnapshot,
+    () => false
+  )
 }
 
 export function BottomSheet({ open, onClose, children }: BottomSheetProps) {
   const dragControls = useDragControls()
   const sheetRef = useRef<HTMLDivElement>(null)
-  const [mounted, setMounted] = useState(false)
   const isDesktop = useIsDesktop()
-
-  useEffect(() => {
-    setMounted(true)
-    return () => setMounted(false)
-  }, [])
 
   useEffect(() => {
     if (open) {
@@ -44,7 +50,7 @@ export function BottomSheet({ open, onClose, children }: BottomSheetProps) {
     }
   }, [open])
 
-  if (!mounted) return null
+  if (typeof document === 'undefined') return null
 
   // Desktop: render as centered modal
   if (isDesktop) {

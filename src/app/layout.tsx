@@ -35,7 +35,8 @@ const inter = localFont({
 
 export const metadata: Metadata = {
   title: 'Caderneta - Fiado Digital',
-  description: 'Organize seu fiado digital. Controle vendas a prazo, envie lembretes via WhatsApp e receba por Pix.',
+  description:
+    'Organize seu fiado digital. Controle vendas a prazo, envie lembretes via WhatsApp e receba por Pix.',
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -46,7 +47,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Caderneta - Fiado Digital',
-    description: 'Organize seu fiado digital. Controle vendas a prazo, envie lembretes via WhatsApp e receba por Pix.',
+    description:
+      'Organize seu fiado digital. Controle vendas a prazo, envie lembretes via WhatsApp e receba por Pix.',
     images: [
       {
         url: '/icon-512x512.png',
@@ -60,7 +62,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Caderneta - Fiado Digital',
-    description: 'Organize seu fiado digital. Controle vendas a prazo, envie lembretes via WhatsApp e receba por Pix.',
+    description:
+      'Organize seu fiado digital. Controle vendas a prazo, envie lembretes via WhatsApp e receba por Pix.',
     images: ['/icon-512x512.png'],
   },
 }
@@ -80,7 +83,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
-      <body className="min-h-screen bg-bg-app font-sans antialiased" suppressHydrationWarning>
+      <body
+        className="min-h-screen bg-bg-app font-sans antialiased"
+        suppressHydrationWarning
+      >
         <Suspense fallback={null}>
           <MetaPixel />
         </Suspense>

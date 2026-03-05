@@ -18,10 +18,7 @@ function getSupabaseAdmin() {
     return null
   }
 
-  return createClient(
-    supabaseUrl,
-    serviceRoleKey
-  )
+  return createClient(supabaseUrl, serviceRoleKey)
 }
 
 export async function POST(request: NextRequest) {
@@ -29,7 +26,10 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseAdmin()
     if (!supabase) {
       console.error('Evento error: missing SUPABASE_URL or SERVICE_ROLE_KEY')
-      return NextResponse.json({ error: 'Server config error' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Server config error' },
+        { status: 500 }
+      )
     }
 
     const body = await request.json()
@@ -42,7 +42,10 @@ export async function POST(request: NextRequest) {
     const metadata = parsed.data.metadata || {}
     const metadataSize = Buffer.byteLength(JSON.stringify(metadata), 'utf8')
     if (metadataSize > MAX_METADATA_BYTES) {
-      return NextResponse.json({ error: 'Metadata muito grande' }, { status: 413 })
+      return NextResponse.json(
+        { error: 'Metadata muito grande' },
+        { status: 413 }
+      )
     }
 
     const { data: nota, error: notaError } = await supabase
@@ -52,7 +55,10 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (notaError || !nota) {
-      return NextResponse.json({ error: 'Nota não encontrada' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Nota não encontrada' },
+        { status: 404 }
+      )
     }
 
     const { error } = await supabase.from('eventos').insert({
@@ -68,6 +74,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Evento error:', error)
-    return NextResponse.json({ error: 'Erro ao registrar evento' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Erro ao registrar evento' },
+      { status: 500 }
+    )
   }
 }

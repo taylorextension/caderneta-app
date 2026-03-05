@@ -16,7 +16,13 @@ interface NotaCardProps {
   } | null
 }
 
-export function NotaCard({ nota, variant, onCobrar, onMarcarPago, ultimaAcao }: NotaCardProps) {
+export function NotaCard({
+  nota,
+  variant,
+  onCobrar,
+  onMarcarPago,
+  ultimaAcao,
+}: NotaCardProps) {
   const router = useRouter()
   const displayName = nota.apelido || nota.cliente_nome
 
@@ -55,7 +61,8 @@ export function NotaCard({ nota, variant, onCobrar, onMarcarPago, ultimaAcao }: 
           </p>
           {acaoText && (
             <p className="text-xs text-text-muted mt-1">
-              {acaoText} · {formatRelativeDate(ultimaAcao!.created_at.split('T')[0])}
+              {acaoText} ·{' '}
+              {formatRelativeDate(ultimaAcao!.created_at.split('T')[0])}
             </p>
           )}
         </div>

@@ -27,12 +27,15 @@ export const useUIStore = create<UIState>((set) => ({
       return { toasts: [...state.toasts, { ...toast, id }] }
     })
 
-    setTimeout(() => {
-      set((state) => {
-        // Find by message instead of exact id just to be safe, or just clear the last one
-        return { toasts: state.toasts.slice(1) } // Simplified auto-remove since IDs might mismatch in strict mode but let's stick to safe removal
-      })
-    }, toast.action ? 5000 : 3000)
+    setTimeout(
+      () => {
+        set((state) => {
+          // Find by message instead of exact id just to be safe, or just clear the last one
+          return { toasts: state.toasts.slice(1) } // Simplified auto-remove since IDs might mismatch in strict mode but let's stick to safe removal
+        })
+      },
+      toast.action ? 5000 : 3000
+    )
   },
   removeToast: (id) =>
     set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),

@@ -41,15 +41,20 @@ export default function SetupPage() {
       const supabase = createClient()
 
       // Tenta obter o usuário com retry simples para casos de propagação lenta de sessão
-      let { data: { user } } = await supabase.auth.getUser()
+      let {
+        data: { user },
+      } = await supabase.auth.getUser()
 
       if (!user) {
         // Fallback para getSession se getUser falhar (comum logo após o signup)
-        const { data: { session } } = await supabase.auth.getSession()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
         user = session?.user || null
       }
 
-      if (!user) throw new Error('Usuario nao autenticado. Tente fazer login novamente.')
+      if (!user)
+        throw new Error('Usuario nao autenticado. Tente fazer login novamente.')
 
       let profileData: { id: string } | null = null
 
@@ -118,15 +123,20 @@ export default function SetupPage() {
       const supabase = createClient()
 
       // Tenta obter o usuário com retry simples para casos de propagação lenta de sessão
-      let { data: { user } } = await supabase.auth.getUser()
+      let {
+        data: { user },
+      } = await supabase.auth.getUser()
 
       if (!user) {
         // Fallback para getSession se getUser falhar (comum logo após o signup)
-        const { data: { session } } = await supabase.auth.getSession()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
         user = session?.user || null
       }
 
-      if (!user) throw new Error('Usuario nao autenticado. Tente fazer login novamente.')
+      if (!user)
+        throw new Error('Usuario nao autenticado. Tente fazer login novamente.')
 
       let profileData: { id: string } | null = null
 
@@ -188,8 +198,9 @@ export default function SetupPage() {
           {[1, 2, 3].map((s) => (
             <div
               key={s}
-              className={`h-2 w-2 rounded-full transition-colors ${s === step ? 'bg-black' : 'bg-border'
-                }`}
+              className={`h-2 w-2 rounded-full transition-colors ${
+                s === step ? 'bg-black' : 'bg-border'
+              }`}
             />
           ))}
         </div>
@@ -308,10 +319,7 @@ export default function SetupPage() {
                 clientes.
               </p>
 
-              <Button
-                onClick={() => router.push('/inicio')}
-                className="w-full"
-              >
+              <Button onClick={() => router.push('/inicio')} className="w-full">
                 Cadastrar primeiro cliente
               </Button>
               <button

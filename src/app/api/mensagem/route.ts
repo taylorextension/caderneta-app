@@ -11,17 +11,26 @@ const mensagemRequestSchema = z.object({
   cliente_apelido: z.string().max(120).nullable().optional(),
   lojista_nome: z.string().max(120).optional().default(''),
   nome_loja: z.string().max(120).optional().default(''),
-  notas: z.array(z.object({
-    descricao: z.string().max(200).nullable(),
-    itens: z.array(z.object({
-      descricao: z.string().max(200),
-      quantidade: z.coerce.number().positive().max(999),
-      valor_unitario: z.coerce.number().nonnegative().max(1_000_000),
-    })).max(100),
-    valor: z.coerce.number().nonnegative().max(1_000_000),
-    data_vencimento: z.string().nullable(),
-    vezes_cobrado: z.coerce.number().int().nonnegative().max(9999),
-  })).min(1).max(100),
+  notas: z
+    .array(
+      z.object({
+        descricao: z.string().max(200).nullable(),
+        itens: z
+          .array(
+            z.object({
+              descricao: z.string().max(200),
+              quantidade: z.coerce.number().positive().max(999),
+              valor_unitario: z.coerce.number().nonnegative().max(1_000_000),
+            })
+          )
+          .max(100),
+        valor: z.coerce.number().nonnegative().max(1_000_000),
+        data_vencimento: z.string().nullable(),
+        vezes_cobrado: z.coerce.number().int().nonnegative().max(9999),
+      })
+    )
+    .min(1)
+    .max(100),
   total: z.coerce.number().nonnegative().max(1_000_000),
 })
 
@@ -36,12 +45,67 @@ function buildPrompt(data: MensagemInput): string {
   const primeiroNome = (data.cliente_nome || 'Cliente').split(' ')[0]
   const nomeLoja = data.nome_loja || ''
   const nomeLojista = data.lojista_nome?.split(' ')[0] || ''
-  const totalFormatado = Number(data.total || 0).toFixed(2).replace('.', ',')
+  const totalFormatado = Number(data.total || 0)
+    .toFixed(2)
+    .replace('.', ',')
 
   // Detecta preposição correta para o nome do comércio
   const primeiraParaLoja = nomeLoja.split(' ')[0]?.toLowerCase() || ''
-  const femininos = ['padaria', 'mercearia', 'loja', 'casa', 'distribuidora', 'doceria', 'confeitaria', 'papelaria', 'farmácia', 'farmacia', 'quitanda', 'barraca', 'feira', 'cantina', 'lanchonete', 'pizzaria', 'sorveteria', 'tabacaria', 'drogaria', 'ótica', 'otica', 'floricultura', 'academia', 'barbearia', 'oficina', 'borracharia']
-  const masculinos = ['mercado', 'mercadinho', 'bar', 'super', 'supermercado', 'armazem', 'armazém', 'atacado', 'atacadão', 'atacadao', 'empório', 'emporio', 'restaurante', 'boteco', 'petshop', 'pet', 'açougue', 'acougue', 'posto', 'salão', 'salao', 'estúdio', 'estudio', 'depósito', 'deposito']
+  const femininos = [
+    'padaria',
+    'mercearia',
+    'loja',
+    'casa',
+    'distribuidora',
+    'doceria',
+    'confeitaria',
+    'papelaria',
+    'farmácia',
+    'farmacia',
+    'quitanda',
+    'barraca',
+    'feira',
+    'cantina',
+    'lanchonete',
+    'pizzaria',
+    'sorveteria',
+    'tabacaria',
+    'drogaria',
+    'ótica',
+    'otica',
+    'floricultura',
+    'academia',
+    'barbearia',
+    'oficina',
+    'borracharia',
+  ]
+  const masculinos = [
+    'mercado',
+    'mercadinho',
+    'bar',
+    'super',
+    'supermercado',
+    'armazem',
+    'armazém',
+    'atacado',
+    'atacadão',
+    'atacadao',
+    'empório',
+    'emporio',
+    'restaurante',
+    'boteco',
+    'petshop',
+    'pet',
+    'açougue',
+    'acougue',
+    'posto',
+    'salão',
+    'salao',
+    'estúdio',
+    'estudio',
+    'depósito',
+    'deposito',
+  ]
   let refLoja = ''
   if (nomeLoja) {
     if (femininos.includes(primeiraParaLoja)) {
@@ -50,7 +114,14 @@ function buildPrompt(data: MensagemInput): string {
       refLoja = `do ${nomeLoja}`
     } else {
       // Tenta inferir pelo final da primeira palavra
-      if (primeiraParaLoja.endsWith('ia') || primeiraParaLoja.endsWith('ria') || primeiraParaLoja.endsWith('ca') || primeiraParaLoja.endsWith('da') || primeiraParaLoja.endsWith('ça') || primeiraParaLoja.endsWith('sa')) {
+      if (
+        primeiraParaLoja.endsWith('ia') ||
+        primeiraParaLoja.endsWith('ria') ||
+        primeiraParaLoja.endsWith('ca') ||
+        primeiraParaLoja.endsWith('da') ||
+        primeiraParaLoja.endsWith('ça') ||
+        primeiraParaLoja.endsWith('sa')
+      ) {
         refLoja = `da ${nomeLoja}`
       } else {
         refLoja = `do ${nomeLoja}`
@@ -60,12 +131,12 @@ function buildPrompt(data: MensagemInput): string {
 
   // Calcula dias vencidos da nota mais antiga
   const diasVencidos = data.notas
-    .filter(n => n.data_vencimento)
-    .map(n => {
+    .filter((n) => n.data_vencimento)
+    .map((n) => {
       const diff = Date.now() - new Date(n.data_vencimento!).getTime()
       return Math.floor(diff / (1000 * 60 * 60 * 24))
     })
-    .filter(d => d > 0)
+    .filter((d) => d > 0)
   const maiorAtraso = diasVencidos.length > 0 ? Math.max(...diasVencidos) : 0
 
   // Contexto de vencimento para o prompt
@@ -148,7 +219,9 @@ MENSAGEM:`
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
@@ -160,12 +233,18 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (!hasAppAccess(profile)) {
-      return NextResponse.json({ error: 'Assinatura necessária' }, { status: 403 })
+      return NextResponse.json(
+        { error: 'Assinatura necessária' },
+        { status: 403 }
+      )
     }
 
     const contentLength = Number(request.headers.get('content-length') || '0')
     if (contentLength > MAX_MENSAGEM_PAYLOAD_BYTES) {
-      return NextResponse.json({ error: 'Payload muito grande' }, { status: 413 })
+      return NextResponse.json(
+        { error: 'Payload muito grande' },
+        { status: 413 }
+      )
     }
 
     const body = await request.json()
@@ -187,7 +266,7 @@ export async function POST(request: NextRequest) {
         config: {
           temperature: 0.8,
           maxOutputTokens: 200,
-        }
+        },
       })
 
       const text = result.text
@@ -204,7 +283,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Erro geral:', error)
     return NextResponse.json(
-      { mensagem: 'Oi! Passando pra lembrar da continha. Dá pra acertar pelo Pix? Obrigado!' },
+      {
+        mensagem:
+          'Oi! Passando pra lembrar da continha. Dá pra acertar pelo Pix? Obrigado!',
+      },
       { status: 200 }
     )
   }

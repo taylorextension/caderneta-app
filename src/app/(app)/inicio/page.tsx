@@ -1,11 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { LogoAnimated } from '@/components/ui/logo-animated'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
-import { useDataStore } from '@/stores/data-store'
+import { useDataStore, type UltimaAcaoResumo } from '@/stores/data-store'
 import { PageTransition } from '@/components/layout/page-transition'
 import { FAB } from '@/components/layout/fab'
 import { PwaInstallButton } from '@/components/pwa/pwa-install-banner'
@@ -16,7 +15,6 @@ import { WizardVenda } from '@/components/vendas/wizard-venda'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
-import { formatCurrencyShort } from '@/lib/format'
 import { ShoppingBagIcon } from '@heroicons/react/24/outline'
 import type { InicioData, NotaComCliente } from '@/types/database'
 
@@ -28,7 +26,9 @@ export default function InicioPage() {
   const setCachedInicio = useDataStore((s) => s.setInicioData)
   const setCachedAcoes = useDataStore((s) => s.setUltimasAcoes)
   const [data, setData] = useState<InicioData | null>(cachedInicio)
-  const [ultimasAcoes, setUltimasAcoes] = useState<Map<string, { tipo: string; created_at: string }>>(new Map(Object.entries(cachedAcoes)))
+  const [ultimasAcoes, setUltimasAcoes] = useState<
+    Map<string, UltimaAcaoResumo>
+  >(new Map(Object.entries(cachedAcoes)))
   const [loading, setLoading] = useState(!cachedInicio)
   const [cobrarNotas, setCobrarNotas] = useState<NotaComCliente[]>([])
   const [showWizard, setShowWizard] = useState(false)
@@ -38,6 +38,16 @@ export default function InicioPage() {
     try {
       setLoading(true)
       const supabase = createClient()
+
+      type CobrancaResumo = {
+        nota_id: string
+        enviado_em: string
+      }
+      type EventoResumo = {
+        nota_id: string
+        tipo: string
+        created_at: string
+      }
 
       const carregarUltimasAcoes = async (notaIds: string[]) => {
         if (notaIds.length === 0) {
@@ -59,7 +69,8 @@ export default function InicioPage() {
 
         const acoesMap = new Map<string, { tipo: string; created_at: string }>()
 
-        cobrancasData?.forEach((c: any) => {
+        cobrancasData?.forEach((cobranca) => {
+          const c = cobranca as CobrancaResumo
           if (!acoesMap.has(c.nota_id)) {
             acoesMap.set(c.nota_id, {
               tipo: 'lembrete_enviado',
@@ -68,9 +79,13 @@ export default function InicioPage() {
           }
         })
 
-        eventosData?.forEach((e: any) => {
+        eventosData?.forEach((evento) => {
+          const e = evento as EventoResumo
           const existing = acoesMap.get(e.nota_id)
-          if (!existing || new Date(e.created_at) > new Date(existing.created_at)) {
+          if (
+            !existing ||
+            new Date(e.created_at) > new Date(existing.created_at)
+          ) {
             acoesMap.set(e.nota_id, { tipo: e.tipo, created_at: e.created_at })
           }
         })
@@ -79,16 +94,17 @@ export default function InicioPage() {
         setCachedAcoes(Object.fromEntries(acoesMap))
       }
 
-      const { data: inicioResult, error: inicioError } = await supabase.rpc(
-        'get_inicio'
-      )
+      const { data: inicioResult, error: inicioError } =
+        await supabase.rpc('get_inicio')
 
       if (!inicioError && inicioResult) {
         const inicioData = inicioResult as InicioData
         setData(inicioData)
         setCachedInicio(inicioData)
 
-        const notaIds = [...inicioData.vencidas, ...inicioData.vencendo].map((nota) => nota.id)
+        const notaIds = [...inicioData.vencidas, ...inicioData.vencendo].map(
+          (nota) => nota.id
+        )
         await carregarUltimasAcoes(notaIds)
         return
       }
@@ -127,7 +143,9 @@ export default function InicioPage() {
       const [pendentesRes, pagosHojeRes, pagosMesRes] = await Promise.all([
         supabase
           .from('notas')
-          .select('id, valor, data_vencimento, itens, descricao, status, vezes_cobrado, cliente_id')
+          .select(
+            'id, valor, data_vencimento, itens, descricao, status, vezes_cobrado, cliente_id'
+          )
           .eq('user_id', profile.id)
           .eq('status', 'pendente'),
         supabase
@@ -151,10 +169,15 @@ export default function InicioPage() {
 
       const pendentes = (pendentesRes.data || []) as NotaBase[]
       const pagosHoje = (pagosHojeRes.data || []) as PagamentoBase[]
-      const pagosMes = (pagosMesRes.data || []) as Array<{ valor: number | string }>
+      const pagosMes = (pagosMesRes.data || []) as Array<{
+        valor: number | string
+      }>
 
       const clienteIds = Array.from(
-        new Set([...pendentes.map((n) => n.cliente_id), ...pagosHoje.map((n) => n.cliente_id)])
+        new Set([
+          ...pendentes.map((n) => n.cliente_id),
+          ...pagosHoje.map((n) => n.cliente_id),
+        ])
       )
 
       const clientesMap = new Map<string, ClienteBase>()
@@ -166,11 +189,10 @@ export default function InicioPage() {
           .in('id', clienteIds)
 
         if (clientesError) throw clientesError
-
-          ; (clientesData || []).forEach((cliente) => {
-            const c = cliente as ClienteBase
-            clientesMap.set(c.id, c)
-          })
+        ;(clientesData || []).forEach((cliente) => {
+          const c = cliente as ClienteBase
+          clientesMap.set(c.id, c)
+        })
       }
 
       const today = new Date(startOfToday)
@@ -204,13 +226,17 @@ export default function InicioPage() {
         }
 
         if (dueDate < today) {
-          const diasAtraso = Math.floor((today.getTime() - dueDate.getTime()) / 86400000)
+          const diasAtraso = Math.floor(
+            (today.getTime() - dueDate.getTime()) / 86400000
+          )
           vencidas.push({ ...base, dias_atraso: diasAtraso })
           return
         }
 
         if (dueDate <= sevenDaysFromToday) {
-          const diasRestantes = Math.floor((dueDate.getTime() - today.getTime()) / 86400000)
+          const diasRestantes = Math.floor(
+            (dueDate.getTime() - today.getTime()) / 86400000
+          )
           vencendo.push({ ...base, dias_restantes: diasRestantes })
         }
       })
@@ -221,8 +247,14 @@ export default function InicioPage() {
         cliente_nome: clientesMap.get(nota.cliente_id)?.nome || 'Cliente',
       }))
 
-      const totalPendente = pendentes.reduce((acc, n) => acc + Number(n.valor || 0), 0)
-      const recebidoMes = pagosMes.reduce((acc, n) => acc + Number(n.valor || 0), 0)
+      const totalPendente = pendentes.reduce(
+        (acc, n) => acc + Number(n.valor || 0),
+        0
+      )
+      const recebidoMes = pagosMes.reduce(
+        (acc, n) => acc + Number(n.valor || 0),
+        0
+      )
 
       const built: InicioData = {
         total_pendente: totalPendente,
@@ -237,12 +269,13 @@ export default function InicioPage() {
       const notaIds = [...vencidas, ...vencendo].map((nota) => nota.id)
       await carregarUltimasAcoes(notaIds)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao carregar dados'
+      const message =
+        err instanceof Error ? err.message : 'Erro ao carregar dados'
       addToast({ message, type: 'error' })
     } finally {
       setLoading(false)
     }
-  }, [profile, addToast])
+  }, [profile, addToast, setCachedAcoes, setCachedInicio])
 
   useEffect(() => {
     fetchData()
@@ -300,77 +333,89 @@ export default function InicioPage() {
     }
   }, [fetchData, profile])
 
-  const handleMarcarPago = useCallback(async (nota: NotaComCliente) => {
-    if (!profile) return
-    try {
-      const supabase = createClient()
-      await supabase
-        .from('notas')
-        .update({ status: 'pago', data_pagamento: new Date().toISOString() })
-        .eq('id', nota.id)
+  const handleMarcarPago = useCallback(
+    async (nota: NotaComCliente) => {
+      if (!profile) return
+      try {
+        const supabase = createClient()
+        await supabase
+          .from('notas')
+          .update({ status: 'pago', data_pagamento: new Date().toISOString() })
+          .eq('id', nota.id)
 
-      await supabase.from('eventos').insert({
-        nota_id: nota.id,
-        cliente_id: nota.cliente_id,
-        user_id: profile.id,
-        tipo: 'marcou_pago',
-      })
-
-      addToast({
-        message: 'Pagamento registrado!',
-        type: 'success',
-        action: {
-          label: 'Desfazer',
-          onClick: async () => {
-            await supabase
-              .from('notas')
-              .update({ status: 'pendente', data_pagamento: null })
-              .eq('id', nota.id)
-            await supabase.from('eventos').insert({
-              nota_id: nota.id,
-              cliente_id: nota.cliente_id,
-              user_id: profile.id,
-              tipo: 'desfez_pago',
-            })
-            fetchData()
-          },
-        },
-      })
-
-      fetchData()
-    } catch {
-      addToast({ message: 'Erro ao atualizar', type: 'error' })
-    }
-  }, [profile, addToast, fetchData])
-
-  const handleEditNota = useCallback(async (notaId: string, data: { descricao: string; valor: string; data_vencimento: string }) => {
-    if (!profile) return
-    try {
-      const supabase = createClient()
-      await supabase
-        .from('notas')
-        .update({
-          descricao: data.descricao || null,
-          valor: parseFloat(data.valor) || 0,
-          data_vencimento: data.data_vencimento || null,
+        await supabase.from('eventos').insert({
+          nota_id: nota.id,
+          cliente_id: nota.cliente_id,
+          user_id: profile.id,
+          tipo: 'marcou_pago',
         })
-        .eq('id', notaId)
-      fetchData()
-    } catch {
-      addToast({ message: 'Erro ao atualizar nota', type: 'error' })
-    }
-  }, [profile, addToast, fetchData])
 
-  const handleDeleteNota = useCallback(async (notaId: string) => {
-    if (!profile) return
-    try {
-      const supabase = createClient()
-      await supabase.from('notas').delete().eq('id', notaId)
-      fetchData()
-    } catch {
-      addToast({ message: 'Erro ao excluir nota', type: 'error' })
-    }
-  }, [profile, addToast, fetchData])
+        addToast({
+          message: 'Pagamento registrado!',
+          type: 'success',
+          action: {
+            label: 'Desfazer',
+            onClick: async () => {
+              await supabase
+                .from('notas')
+                .update({ status: 'pendente', data_pagamento: null })
+                .eq('id', nota.id)
+              await supabase.from('eventos').insert({
+                nota_id: nota.id,
+                cliente_id: nota.cliente_id,
+                user_id: profile.id,
+                tipo: 'desfez_pago',
+              })
+              fetchData()
+            },
+          },
+        })
+
+        fetchData()
+      } catch {
+        addToast({ message: 'Erro ao atualizar', type: 'error' })
+      }
+    },
+    [profile, addToast, fetchData]
+  )
+
+  const handleEditNota = useCallback(
+    async (
+      notaId: string,
+      data: { descricao: string; valor: string; data_vencimento: string }
+    ) => {
+      if (!profile) return
+      try {
+        const supabase = createClient()
+        await supabase
+          .from('notas')
+          .update({
+            descricao: data.descricao || null,
+            valor: parseFloat(data.valor) || 0,
+            data_vencimento: data.data_vencimento || null,
+          })
+          .eq('id', notaId)
+        fetchData()
+      } catch {
+        addToast({ message: 'Erro ao atualizar nota', type: 'error' })
+      }
+    },
+    [profile, addToast, fetchData]
+  )
+
+  const handleDeleteNota = useCallback(
+    async (notaId: string) => {
+      if (!profile) return
+      try {
+        const supabase = createClient()
+        await supabase.from('notas').delete().eq('id', notaId)
+        fetchData()
+      } catch {
+        addToast({ message: 'Erro ao excluir nota', type: 'error' })
+      }
+    },
+    [profile, addToast, fetchData]
+  )
 
   if (loading) {
     return (
@@ -426,7 +471,6 @@ export default function InicioPage() {
           </div>
         ) : (
           <>
-
             <div className="lg:grid lg:grid-cols-2 lg:gap-6">
               {data && data.vencidas.length > 0 && (
                 <div className="mt-6">
@@ -492,7 +536,6 @@ export default function InicioPage() {
                 </div>
               )}
             </div>
-
           </>
         )}
       </div>
@@ -505,18 +548,16 @@ export default function InicioPage() {
         notas={cobrarNotas}
       />
 
-      {
-        showWizard && (
-          <WizardVenda
-            open={showWizard}
-            onClose={() => {
-              setShowWizard(false)
-              fetchData()
-            }}
-          />
-        )
-      }
-    </PageTransition >
+      {showWizard && (
+        <WizardVenda
+          open={showWizard}
+          onClose={() => {
+            setShowWizard(false)
+            fetchData()
+          }}
+        />
+      )}
+    </PageTransition>
   )
 }
 

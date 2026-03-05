@@ -29,7 +29,9 @@ Regras:
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
@@ -41,12 +43,18 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (!hasAppAccess(profile)) {
-      return NextResponse.json({ error: 'Assinatura necessária' }, { status: 403 })
+      return NextResponse.json(
+        { error: 'Assinatura necessária' },
+        { status: 403 }
+      )
     }
 
     const contentLength = Number(request.headers.get('content-length') || '0')
     if (contentLength > MAX_IMAGE_BYTES * 2) {
-      return NextResponse.json({ error: 'Imagem muito grande' }, { status: 413 })
+      return NextResponse.json(
+        { error: 'Imagem muito grande' },
+        { status: 413 }
+      )
     }
 
     const body = await request.json()
@@ -57,16 +65,23 @@ export async function POST(request: NextRequest) {
 
     const { image } = parsedBody.data
     if (!/^data:image\/(jpeg|jpg|png|webp);base64,/.test(image)) {
-      return NextResponse.json({ error: 'Formato de imagem inválido' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Formato de imagem inválido' },
+        { status: 400 }
+      )
     }
 
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '')
     const imageBytes = Buffer.byteLength(base64Data, 'base64')
     if (imageBytes > MAX_IMAGE_BYTES) {
-      return NextResponse.json({ error: 'Imagem muito grande' }, { status: 413 })
+      return NextResponse.json(
+        { error: 'Imagem muito grande' },
+        { status: 413 }
+      )
     }
 
-    const mimeType = image.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg'
+    const mimeType =
+      image.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg'
 
     const ai = getGoogleAI()
 
@@ -87,23 +102,31 @@ export async function POST(request: NextRequest) {
         },
       ],
       config: {
-        responseMimeType: "application/json",
-      }
+        responseMimeType: 'application/json',
+      },
     })
 
     const text = response.text
     if (!text) {
-      throw new Error("Resposta de texto vazia")
+      throw new Error('Resposta de texto vazia')
     }
 
-    const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+    const cleaned = text
+      .replace(/```json\n?/g, '')
+      .replace(/```\n?/g, '')
+      .trim()
     const parsed = JSON.parse(cleaned)
 
     return NextResponse.json(parsed)
-  } catch (error: any) {
-    console.error('OCR error:', error?.message || error)
+  } catch (error: unknown) {
+    console.error('OCR error:', error instanceof Error ? error.message : error)
     return NextResponse.json(
-      { error: 'Erro ao processar imagem', descricao: null, data_vencimento: null, total: 0 },
+      {
+        error: 'Erro ao processar imagem',
+        descricao: null,
+        data_vencimento: null,
+        total: 0,
+      },
       { status: 200 }
     )
   }

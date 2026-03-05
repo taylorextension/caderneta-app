@@ -48,7 +48,9 @@ export function PaywallModal() {
   useEffect(() => {
     async function getEmail() {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (user?.email) setEmail(user.email)
     }
     getEmail()
@@ -81,9 +83,7 @@ export function PaywallModal() {
           Assinar · R$ 29,90/mês
         </Button>
 
-        <p className="mt-4 text-xs text-text-muted">
-          Cancele quando quiser
-        </p>
+        <p className="mt-4 text-xs text-text-muted">Cancele quando quiser</p>
       </div>
     </div>
   )

@@ -40,7 +40,9 @@ export default function AjustesPage() {
       // Clear persisted data to prevent leakage on shared devices
       const { useDataStore } = await import('@/stores/data-store')
       useDataStore.getState().clearAll()
-      try { localStorage.removeItem('caderneta-data') } catch { }
+      try {
+        localStorage.removeItem('caderneta-data')
+      } catch {}
       router.push('/login')
     } catch {
       addToast({ message: 'Erro ao sair', type: 'error' })

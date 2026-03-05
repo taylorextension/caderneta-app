@@ -8,17 +8,19 @@ const REFRESH_INTERVAL_MS = 60000
 
 export function useTrial() {
   const profile = useAuthStore((s) => s.profile)
+  const profileId = profile?.id
+  const assinaturaAtiva = profile?.assinatura_ativa
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
-    if (!profile || profile.assinatura_ativa) return
+    if (!profileId || assinaturaAtiva) return
 
     const interval = window.setInterval(() => {
       setNow(Date.now())
     }, REFRESH_INTERVAL_MS)
 
     return () => window.clearInterval(interval)
-  }, [profile?.id, profile?.assinatura_ativa])
+  }, [profileId, assinaturaAtiva])
 
   if (!profile) {
     return {
