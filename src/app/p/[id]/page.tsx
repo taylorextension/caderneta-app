@@ -3,22 +3,26 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 
-import { createClient } from '@/lib/supabase/client'
 import { gerarBRCode, validarBRCode } from '@/lib/pix'
 import { formatCurrencyShort } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LogoAnimated } from '@/components/ui/logo-animated'
-import type { Nota, Profile, ItemNota } from '@/types/database'
+import type { Profile, ItemNota } from '@/types/database'
 
-interface NotaComProfile extends Nota {
-  profiles: Pick<Profile, 'nome_loja' | 'pix_chave' | 'pix_tipo' | 'pix_nome' | 'pix_cidade'>
+interface NotaPublica {
+  id: string
+  status: 'pendente' | 'pago' | 'cancelado'
+  itens: ItemNota[] | null
+  valor: number
+  descricao: string | null
+  profiles: Pick<Profile, 'nome_loja' | 'pix_chave' | 'pix_nome' | 'pix_cidade'>
 }
 
 export default function PublicPage() {
   const params = useParams()
   const id = params.id as string
-  const [nota, setNota] = useState<NotaComProfile | null>(null)
+  const [nota, setNota] = useState<NotaPublica | null>(null)
   const [loading, setLoading] = useState(true)
   const [qrUrl, setQrUrl] = useState<string>('')
   const [brCode, setBrCode] = useState<string>('')
@@ -26,6 +30,8 @@ export default function PublicPage() {
   const [notFound, setNotFound] = useState(false)
 
   const fetchNota = useCallback(async () => {
+    let removeBeforeUnload: (() => void) | undefined
+
     try {
       setLoading(true)
 
@@ -37,7 +43,7 @@ export default function PublicPage() {
 
       const data = await res.json()
 
-      const notaData = data as unknown as NotaComProfile
+      const notaData = data as NotaPublica
       setNota(notaData)
 
       // Track link opened
@@ -46,8 +52,6 @@ export default function PublicPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nota_id: id,
-          cliente_id: notaData.cliente_id,
-          user_id: notaData.user_id,
           tipo: 'link_aberto',
         }),
       })
@@ -60,14 +64,13 @@ export default function PublicPage() {
           '/api/eventos',
           JSON.stringify({
             nota_id: id,
-            cliente_id: notaData.cliente_id,
-            user_id: notaData.user_id,
             tipo: 'tempo_pagina',
             metadata: { segundos: seconds },
           })
         )
       }
       window.addEventListener('beforeunload', handleUnload)
+      removeBeforeUnload = () => window.removeEventListener('beforeunload', handleUnload)
 
       // Generate Pix
       if (notaData.profiles?.pix_chave) {
@@ -75,13 +78,6 @@ export default function PublicPage() {
         const chavePix = notaData.profiles.pix_chave.trim()
         const nomeRecebedor = (notaData.profiles.pix_nome || notaData.profiles.nome_loja || 'LOJISTA').trim()
         const cidadeRecebedor = (notaData.profiles.pix_cidade || 'SAO PAULO').trim()
-
-        console.log('Gerando Pix:', {
-          chave: chavePix,
-          nome: nomeRecebedor,
-          cidade: cidadeRecebedor,
-          valor: notaData.valor
-        })
 
         try {
           const code = gerarBRCode({
@@ -92,8 +88,9 @@ export default function PublicPage() {
             txid: id.substring(0, 25),
           })
 
-          console.log('BRCode gerado:', code)
-          console.log('BRCode válido?', validarBRCode(code))
+          if (!validarBRCode(code)) {
+            throw new Error('BRCode inválido')
+          }
 
           setBrCode(code)
 
@@ -105,19 +102,25 @@ export default function PublicPage() {
           console.error('Erro ao gerar Pix:', pixError)
         }
       }
-
-
-
-      return () => window.removeEventListener('beforeunload', handleUnload)
     } catch {
       setNotFound(true)
     } finally {
       setLoading(false)
     }
+
+    return removeBeforeUnload
   }, [id])
 
   useEffect(() => {
-    fetchNota()
+    let cleanup: (() => void) | undefined
+
+    fetchNota().then((remove) => {
+      cleanup = remove
+    })
+
+    return () => {
+      if (cleanup) cleanup()
+    }
   }, [fetchNota])
 
   async function handleCopyPix() {
@@ -158,8 +161,6 @@ export default function PublicPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nota_id: id,
-          cliente_id: nota.cliente_id,
-          user_id: nota.user_id,
           tipo: 'pix_copiado',
         }),
       })

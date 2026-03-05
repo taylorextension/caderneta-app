@@ -18,15 +18,28 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return
 
   const url = new URL(event.request.url)
+  const sameOrigin = url.origin === self.location.origin
 
-  // Don't cache API calls, Supabase requests, or auth-related data
+  // Don't cache cross-origin requests, API calls, Supabase requests, auth pages or HTML documents
   if (
+    !sameOrigin ||
     url.pathname.startsWith('/api/') ||
     url.hostname.includes('supabase') ||
-    url.pathname.startsWith('/auth/')
+    url.pathname.startsWith('/auth/') ||
+    event.request.mode === 'navigate' ||
+    event.request.destination === 'document'
   ) {
     return
   }
+
+  // Cache only static assets to avoid storing authenticated HTML/data pages.
+  const isStaticAsset =
+    url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/icons/') ||
+    url.pathname === '/manifest.json' ||
+    ['style', 'script', 'image', 'font'].includes(event.request.destination)
+
+  if (!isStaticAsset) return
 
   event.respondWith(
     fetch(event.request)

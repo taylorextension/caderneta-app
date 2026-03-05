@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getGoogleAI } from '@/lib/ai'
+import { z } from 'zod'
+
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024
+const MAX_BASE64_CHARS = 6_000_000
+
+const ocrBodySchema = z.object({
+  image: z.string().min(1).max(MAX_BASE64_CHARS),
+})
 
 const OCR_PROMPT = `Extraia dados de uma nota, recibo ou comprovante brasileiro.
 Responda APENAS com JSON válido (sem markdown).
@@ -25,13 +33,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const { image } = await request.json()
+    const contentLength = Number(request.headers.get('content-length') || '0')
+    if (contentLength > MAX_IMAGE_BYTES * 2) {
+      return NextResponse.json({ error: 'Imagem muito grande' }, { status: 413 })
+    }
 
-    if (!image) {
-      return NextResponse.json({ error: 'Imagem necessária' }, { status: 400 })
+    const body = await request.json()
+    const parsedBody = ocrBodySchema.safeParse(body)
+    if (!parsedBody.success) {
+      return NextResponse.json({ error: 'Payload inválido' }, { status: 400 })
+    }
+
+    const { image } = parsedBody.data
+    if (!/^data:image\/(jpeg|jpg|png|webp);base64,/.test(image)) {
+      return NextResponse.json({ error: 'Formato de imagem inválido' }, { status: 400 })
     }
 
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '')
+    const imageBytes = Buffer.byteLength(base64Data, 'base64')
+    if (imageBytes > MAX_IMAGE_BYTES) {
+      return NextResponse.json({ error: 'Imagem muito grande' }, { status: 413 })
+    }
+
     const mimeType = image.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg'
 
     const ai = getGoogleAI()

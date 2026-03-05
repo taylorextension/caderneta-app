@@ -1,9 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getGoogleAI } from '@/lib/ai'
-import type { MensagemRequest } from '@/types/api'
+import { z } from 'zod'
 
-function buildPrompt(data: MensagemRequest): string {
+const MAX_MENSAGEM_PAYLOAD_BYTES = 64 * 1024
+
+const mensagemRequestSchema = z.object({
+  cliente_nome: z.string().min(1).max(120),
+  cliente_apelido: z.string().max(120).nullable().optional(),
+  lojista_nome: z.string().max(120).optional().default(''),
+  nome_loja: z.string().max(120).optional().default(''),
+  notas: z.array(z.object({
+    descricao: z.string().max(200).nullable(),
+    itens: z.array(z.object({
+      descricao: z.string().max(200),
+      quantidade: z.coerce.number().positive().max(999),
+      valor_unitario: z.coerce.number().nonnegative().max(1_000_000),
+    })).max(100),
+    valor: z.coerce.number().nonnegative().max(1_000_000),
+    data_vencimento: z.string().nullable(),
+    vezes_cobrado: z.coerce.number().int().nonnegative().max(9999),
+  })).min(1).max(100),
+  total: z.coerce.number().nonnegative().max(1_000_000),
+})
+
+type MensagemInput = z.infer<typeof mensagemRequestSchema>
+
+function buildPrompt(data: MensagemInput): string {
   if (!data.notas || data.notas.length === 0) {
     return 'Oi! Passando pra lembrar da continha. Dá pra acertar pelo Pix? Obrigado!'
   }
@@ -129,7 +152,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const data: MensagemRequest = await request.json()
+    const contentLength = Number(request.headers.get('content-length') || '0')
+    if (contentLength > MAX_MENSAGEM_PAYLOAD_BYTES) {
+      return NextResponse.json({ error: 'Payload muito grande' }, { status: 413 })
+    }
+
+    const body = await request.json()
+    const parsedBody = mensagemRequestSchema.safeParse(body)
+    if (!parsedBody.success) {
+      return NextResponse.json({ error: 'Payload inválido' }, { status: 400 })
+    }
+
+    const data = parsedBody.data
 
     const prompt = buildPrompt(data)
 
