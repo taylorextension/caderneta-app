@@ -23,7 +23,7 @@ export async function GET(
 
         const { data, error } = await supabase
             .from('notas')
-            .select('*, profiles!notas_user_id_fkey(nome_loja, pix_chave, pix_tipo, pix_nome, pix_cidade)')
+            .select('*, profiles!notas_user_id_fkey(nome_loja, pix_chave, pix_nome, pix_cidade)')
             .eq('id', id)
             .single()
 

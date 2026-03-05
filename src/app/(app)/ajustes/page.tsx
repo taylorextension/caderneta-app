@@ -37,6 +37,10 @@ export default function AjustesPage() {
       const supabase = createClient()
       await supabase.auth.signOut()
       setProfile(null)
+      // Clear persisted data to prevent leakage on shared devices
+      const { useDataStore } = await import('@/stores/data-store')
+      useDataStore.getState().clearAll()
+      try { localStorage.removeItem('caderneta-data') } catch { }
       router.push('/login')
     } catch {
       addToast({ message: 'Erro ao sair', type: 'error' })

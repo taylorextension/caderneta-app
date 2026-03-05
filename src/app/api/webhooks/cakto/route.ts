@@ -6,9 +6,13 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
         const { secret, event, data } = body
 
-        // 1. Validate secret
+        // 1. Validate secret (fail-closed)
         const expectedSecret = process.env.CAKTO_WEBHOOK_SECRET?.trim()
-        if (expectedSecret && secret !== expectedSecret) {
+        if (!expectedSecret) {
+            console.error('Cakto webhook: CAKTO_WEBHOOK_SECRET not configured')
+            return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+        }
+        if (secret !== expectedSecret) {
             return NextResponse.json({ error: 'Invalid secret' }, { status: 401 })
         }
 

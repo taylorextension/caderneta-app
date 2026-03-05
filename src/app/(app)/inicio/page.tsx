@@ -80,10 +80,7 @@ export default function InicioPage() {
       }
 
       const { data: inicioResult, error: inicioError } = await supabase.rpc(
-        'get_inicio',
-        {
-          p_user_id: profile.id,
-        }
+        'get_inicio'
       )
 
       if (!inicioError && inicioResult) {

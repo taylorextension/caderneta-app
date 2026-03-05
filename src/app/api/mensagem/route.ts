@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { getGoogleAI } from '@/lib/ai'
 import type { MensagemRequest } from '@/types/api'
 
@@ -122,6 +123,12 @@ MENSAGEM:`
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
     const data: MensagemRequest = await request.json()
 
     const prompt = buildPrompt(data)

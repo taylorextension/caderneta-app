@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { getGoogleAI } from '@/lib/ai'
 
 const OCR_PROMPT = `Extraia dados de uma nota, recibo ou comprovante brasileiro.
@@ -18,6 +19,12 @@ Regras:
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
     const { image } = await request.json()
 
     if (!image) {
