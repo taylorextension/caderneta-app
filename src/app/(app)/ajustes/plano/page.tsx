@@ -45,7 +45,7 @@ function buildCheckoutUrl(profile: Profile | null, email?: string | null) {
 
 export default function PlanoPage() {
   const router = useRouter()
-  const { trialAtivo, diasRestantes, assinaturaAtiva, acesso } = useTrial()
+  const { diasRestantes, assinaturaAtiva, acesso } = useTrial()
   const profile = useAuthStore((s) => s.profile)
   const [email, setEmail] = useState<string | null>(null)
 
@@ -66,8 +66,7 @@ export default function PlanoPage() {
   const DIAS_TRIAL = 14
   const diasUsados = Math.max(0, DIAS_TRIAL - diasRestantes)
   const progresso = Math.min(100, (diasUsados / DIAS_TRIAL) * 100)
-  const trialAcabando = diasRestantes <= 3 && diasRestantes > 0
-  const trialVencido = diasRestantes <= 0
+  const trialAcabando = !assinaturaAtiva && diasRestantes <= 3 && diasRestantes > 0
 
   return (
     <PageTransition>
@@ -84,28 +83,38 @@ export default function PlanoPage() {
 
         {/* Card do trial */}
         <Card>
-          <p className="text-base font-semibold text-[#02090A] mb-4">
-            {trialVencido ? 'Período grátis encerrado' : 'Período grátis'}
-          </p>
+          {assinaturaAtiva ? (
+            <>
+              <p className="text-base font-semibold text-[#02090A] mb-2">
+                Assinatura ativa
+              </p>
+              <p className="text-sm text-[#6B7280]">
+                Seu acesso está liberado. O app não vai mais exibir contagem do período grátis enquanto a assinatura estiver ativa.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-base font-semibold text-[#02090A] mb-4">
+                Período grátis
+              </p>
 
-          {/* Progress bar */}
-          <div className="h-2 bg-zinc-200 rounded-full w-full mb-2">
-            <div
-              className={`h-2 rounded-full transition-all ${trialVencido || trialAcabando ? 'bg-red-500' : 'bg-black'
-                }`}
-              style={{ width: `${trialVencido ? 100 : progresso}%` }}
-            />
-          </div>
+              <div className="h-2 bg-zinc-200 rounded-full w-full mb-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${trialAcabando ? 'bg-red-500' : 'bg-black'
+                    }`}
+                  style={{ width: `${progresso}%` }}
+                />
+              </div>
 
-          <p className="text-xs text-[#6B7280] mb-4">
-            {trialVencido
-              ? 'Seu período grátis acabou'
-              : `${diasRestantes} dias restantes`}
-          </p>
+              <p className="text-xs text-[#6B7280] mb-4">
+                {diasRestantes} dias restantes
+              </p>
 
-          <p className="text-sm text-[#6B7280]">
-            Todos os recursos estão liberados durante o período grátis.
-          </p>
+              <p className="text-sm text-[#6B7280]">
+                Todos os recursos estão liberados durante o período grátis.
+              </p>
+            </>
+          )}
         </Card>
 
         {/* O que está incluso */}
@@ -124,22 +133,23 @@ export default function PlanoPage() {
         </div>
 
         {/* Card de preço */}
-        <Card className={trialVencido ? 'mt-8' : 'mt-6'}>
-          <div className="text-center py-2">
-            <p className="text-2xl font-bold text-[#02090A]">R$ 29,90/mês</p>
-            <p className="text-xs text-[#9CA3AF] mt-1">Cancele quando quiser.</p>
+        {!assinaturaAtiva && (
+          <Card className="mt-6">
+            <div className="text-center py-2">
+              <p className="text-2xl font-bold text-[#02090A]">R$ 29,90/mês</p>
+              <p className="text-xs text-[#9CA3AF] mt-1">Cancele quando quiser.</p>
 
-            <Button
-              onClick={() => {
-                window.location.href = buildCheckoutUrl(profile, email)
-              }}
-              className="w-full mt-4"
-            >
-              Assinar agora
-            </Button>
-
-          </div>
-        </Card>
+              <Button
+                onClick={() => {
+                  window.location.href = buildCheckoutUrl(profile, email)
+                }}
+                className="w-full mt-4"
+              >
+                Assinar agora
+              </Button>
+            </div>
+          </Card>
+        )}
       </div>
     </PageTransition>
   )

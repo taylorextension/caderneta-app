@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getGoogleAI } from '@/lib/ai'
+import { hasAppAccess } from '@/lib/subscription'
 import { z } from 'zod'
 
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024
@@ -31,6 +32,16 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('assinatura_ativa, trial_fim')
+      .eq('id', user.id)
+      .single()
+
+    if (!hasAppAccess(profile)) {
+      return NextResponse.json({ error: 'Assinatura necessária' }, { status: 403 })
     }
 
     const contentLength = Number(request.headers.get('content-length') || '0')

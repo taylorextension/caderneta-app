@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-function getSupabase() {
+function getSupabaseAdmin() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+
+    if (!supabaseUrl || !serviceRoleKey) {
+        return null
+    }
+
     return createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        supabaseUrl,
+        serviceRoleKey
     )
 }
 
@@ -19,7 +26,11 @@ export async function GET(
             return NextResponse.json({ error: 'ID da nota não fornecido' }, { status: 400 })
         }
 
-        const supabase = getSupabase()
+        const supabase = getSupabaseAdmin()
+        if (!supabase) {
+            console.error('API /nota/[id]: missing SUPABASE_URL or SERVICE_ROLE_KEY')
+            return NextResponse.json({ error: 'Server config error' }, { status: 500 })
+        }
 
         const { data, error } = await supabase
             .from('notas')

@@ -7,10 +7,12 @@ export interface Profile {
   pix_tipo: 'cpf' | 'cnpj' | 'email' | 'telefone' | 'aleatoria' | null
   pix_nome: string | null
   pix_cidade: string
-  trial_fim: string
+  trial_fim: string | null
   assinatura_ativa: boolean
+  plano?: string
   onboarding_completo?: boolean
   created_at: string
+  updated_at?: string
 }
 
 export interface Cliente {

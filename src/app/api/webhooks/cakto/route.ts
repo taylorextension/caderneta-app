@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
                 break
             case 'subscription_renewed':
                 assinaturaAtiva = true
+                plano = 'basico'
                 break
             case 'subscription_canceled':
                 assinaturaAtiva = false

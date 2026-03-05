@@ -21,40 +21,119 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
+    let active = true
+    const supabase = createClient()
+    let removeWindowListeners: (() => void) | undefined
+    let profileChannel: ReturnType<typeof supabase.channel> | null = null
+
+    async function loadProfile(userId: string, redirectOnMissing = true) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (error || !data) {
+        if (redirectOnMissing && active) {
+          setProfile(null)
+          router.push('/login')
+        }
+        return null
+      }
+
+      if (!active) return null
+
+      if (!isOnboardingComplete(data) && pathname !== '/setup') {
+        router.push('/setup')
+        return null
+      }
+
+      setProfile(data as Profile)
+      setReady(true)
+      return data as Profile
+    }
+
     async function init() {
       try {
-        const supabase = createClient()
+        if (!useAuthStore.getState().profile) {
+          setLoading(true)
+        }
+
         const { data: { user } } = await supabase.auth.getUser()
 
         if (!user) {
+          if (!active) return
+          setProfile(null)
           router.push('/login')
           return
         }
 
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-
-        if (!data) {
-          router.push('/login')
+        const loadedProfile = await loadProfile(user.id)
+        if (!loadedProfile || !active) {
           return
         }
 
-        if (!isOnboardingComplete(data) && pathname !== '/setup') {
-          router.push('/setup')
-          return
+        const refreshProfile = () => {
+          void loadProfile(user.id, false)
+        }
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === 'visible') {
+            refreshProfile()
+          }
         }
 
-        setProfile(data as Profile)
-        setReady(true)
+        window.addEventListener('focus', refreshProfile)
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        removeWindowListeners = () => {
+          window.removeEventListener('focus', refreshProfile)
+          document.removeEventListener('visibilitychange', handleVisibilityChange)
+        }
+
+        profileChannel = supabase
+          .channel(`profile-${user.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'profiles',
+              filter: `id=eq.${user.id}`,
+            },
+            (payload) => {
+              if (!payload.new || !active) return
+
+              const nextProfile = payload.new as Profile
+
+              if (!isOnboardingComplete(nextProfile) && pathname !== '/setup') {
+                router.push('/setup')
+                return
+              }
+
+              setProfile(nextProfile)
+              setReady(true)
+            }
+          )
+          .subscribe()
       } catch {
+        if (!active) return
+        setProfile(null)
         router.push('/login')
+      } finally {
+        if (active) {
+          setLoading(false)
+        }
       }
     }
 
-    init()
+    void init()
+
+    return () => {
+      active = false
+      removeWindowListeners?.()
+      if (profileChannel) {
+        void supabase.removeChannel(profileChannel)
+      }
+    }
   }, [router, pathname, setProfile, setLoading])
 
   if (!ready || loading || !profile) {
