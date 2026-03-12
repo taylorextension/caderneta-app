@@ -4,11 +4,11 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {
   XMarkIcon,
-  CameraIcon,
   PlusIcon,
   XCircleIcon,
 } from '@heroicons/react/24/outline'
 import { createClient } from '@/lib/supabase/client'
+import { trackEvent } from '@/lib/analytics'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
@@ -16,19 +16,19 @@ import { Input } from '@/components/ui/input'
 import { Avatar } from '@/components/ui/avatar'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
-import { useCamera } from '@/hooks/use-camera'
 import type { Cliente, ItemNota } from '@/types/database'
 
 interface WizardVendaProps {
   open: boolean
   onClose: () => void
   preselectedClienteId?: string
+  defaultNovoCliente?: boolean
 }
-
 export function WizardVenda({
   open,
   onClose,
   preselectedClienteId,
+  defaultNovoCliente,
 }: WizardVendaProps) {
   const profile = useAuthStore((s) => s.profile)
   const addToast = useUIStore((s) => s.addToast)
@@ -50,8 +50,6 @@ export function WizardVenda({
   const [showCustomDate, setShowCustomDate] = useState(false)
   const vencimentoInputRef = useRef<HTMLInputElement>(null)
   const [saving, setSaving] = useState(false)
-  const [ocrLoading, setOcrLoading] = useState(false)
-  const { inputRef, capture, handleCapture } = useCamera()
 
   const loadClientes = useCallback(async () => {
     if (!profile) return
@@ -71,8 +69,17 @@ export function WizardVenda({
   }, [profile, preselectedClienteId])
 
   useEffect(() => {
-    if (open) loadClientes()
-  }, [open, loadClientes])
+    if (open) {
+      loadClientes()
+      if (defaultNovoCliente) {
+        setShowNovoCliente(true)
+      }
+    } else {
+      // Reset state when closing just in case
+      setShowNovoCliente(false)
+      setStep(preselectedClienteId ? 2 : 1)
+    }
+  }, [open, loadClientes, defaultNovoCliente, preselectedClienteId])
 
   const filteredClientes = clientes.filter(
     (c) =>
@@ -101,84 +108,14 @@ export function WizardVenda({
       setSelectedCliente(data)
       setShowNovoCliente(false)
       setStep(2)
+      trackEvent('first_cliente_created')
       loadClientes()
     } catch {
       addToast({ message: 'Erro ao criar cliente', type: 'error' })
     }
   }
 
-  async function compressImage(
-    base64: string,
-    maxWidth = 1200,
-    quality = 0.7
-  ): Promise<string> {
-    return new Promise((resolve) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        let w = img.width
-        let h = img.height
-        if (w > maxWidth) {
-          h = (h * maxWidth) / w
-          w = maxWidth
-        }
-        canvas.width = w
-        canvas.height = h
-        const ctx = canvas.getContext('2d')!
-        ctx.drawImage(img, 0, 0, w, h)
-        resolve(canvas.toDataURL('image/jpeg', quality))
-      }
-      img.src = base64
-    })
-  }
 
-  async function handleOCR(base64: string) {
-    try {
-      setOcrLoading(true)
-      const compressed = await compressImage(base64)
-      const res = await fetch('/api/ocr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: compressed }),
-      })
-      const data = await res.json()
-      let hasData = false
-
-      const parsedTotal = Number(data.total)
-      if (parsedTotal > 0) {
-        setValor(parsedTotal.toFixed(2))
-        setValorDisplay(
-          formatCurrencyInput(parsedTotal.toFixed(2).replace('.', ''))
-        )
-        hasData = true
-      }
-
-      if (data.descricao) {
-        setDescricao(data.descricao)
-        hasData = true
-      }
-
-      if (data.data_vencimento) {
-        setVencimentoCustom(data.data_vencimento)
-        setVencimento(data.data_vencimento)
-        setShowCustomDate(true)
-        hasData = true
-      }
-
-      if (hasData) {
-        addToast({ message: 'Dados extraídos da nota!', type: 'success' })
-      } else {
-        addToast({
-          message: 'Não foi possível ler os valores da nota',
-          type: 'warning',
-        })
-      }
-    } catch {
-      addToast({ message: 'Erro ao processar imagem', type: 'error' })
-    } finally {
-      setOcrLoading(false)
-    }
-  }
 
   function addItem() {
     setItens([...itens, { descricao: '', quantidade: 1, valor_unitario: 0 }])
@@ -288,6 +225,7 @@ export function WizardVenda({
       })
       if (error) throw error
 
+      trackEvent('first_nota_created')
       const msg = isAVista ? 'Venda à vista registrada' : 'Venda registrada'
       addToast({ message: msg, type: 'success' })
       onClose()
@@ -378,27 +316,7 @@ export function WizardVenda({
             >
               <h2 className="text-lg font-semibold mb-4">O que comprou?</h2>
 
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) handleCapture(file, handleOCR)
-                }}
-              />
 
-              <Button
-                variant="secondary"
-                onClick={capture}
-                loading={ocrLoading}
-                className="w-full mb-6"
-              >
-                <CameraIcon className="h-5 w-5" />
-                Escanear nota
-              </Button>
 
               <Input
                 label="Descrição"
@@ -598,6 +516,7 @@ export function WizardVenda({
                 onClick={handleSalvar}
                 loading={saving}
                 className="w-full mt-8"
+                id="wizard-save-btn"
               >
                 Salvar venda ✓
               </Button>

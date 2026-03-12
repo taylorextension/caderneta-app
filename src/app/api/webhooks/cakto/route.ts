@@ -64,11 +64,11 @@ export async function POST(request: NextRequest) {
     switch (event) {
       case 'purchase_approved':
         assinaturaAtiva = true
-        plano = 'basico'
+        plano = 'pro'
         break
       case 'subscription_renewed':
         assinaturaAtiva = true
-        plano = 'basico'
+        plano = 'pro'
         break
       case 'subscription_canceled':
         assinaturaAtiva = false

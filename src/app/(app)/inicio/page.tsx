@@ -1,10 +1,13 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, Suspense } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { trackEvent } from '@/lib/analytics'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUIStore } from '@/stores/ui-store'
 import { useDataStore, type UltimaAcaoResumo } from '@/stores/data-store'
+import { useTrial } from '@/hooks/use-trial'
 import { PageTransition } from '@/components/layout/page-transition'
 import { FAB } from '@/components/layout/fab'
 import { PwaInstallButton } from '@/components/pwa/pwa-install-banner'
@@ -16,6 +19,7 @@ import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ShoppingBagIcon } from '@heroicons/react/24/outline'
+import { SparklesIcon } from '@heroicons/react/24/solid'
 import type { InicioData, NotaComCliente } from '@/types/database'
 
 export default function InicioPage() {
@@ -25,6 +29,7 @@ export default function InicioPage() {
   const cachedAcoes = useDataStore((s) => s.ultimasAcoes)
   const setCachedInicio = useDataStore((s) => s.setInicioData)
   const setCachedAcoes = useDataStore((s) => s.setUltimasAcoes)
+  const { diasRestantes, assinaturaAtiva } = useTrial()
   const [data, setData] = useState<InicioData | null>(cachedInicio)
   const [ultimasAcoes, setUltimasAcoes] = useState<
     Map<string, UltimaAcaoResumo>
@@ -32,6 +37,7 @@ export default function InicioPage() {
   const [loading, setLoading] = useState(!cachedInicio)
   const [cobrarNotas, setCobrarNotas] = useState<NotaComCliente[]>([])
   const [showWizard, setShowWizard] = useState(false)
+  const [autoOpenNovoCliente, setAutoOpenNovoCliente] = useState(false)
 
   const fetchData = useCallback(async () => {
     if (!profile) return
@@ -278,6 +284,15 @@ export default function InicioPage() {
   }, [profile, addToast, setCachedAcoes, setCachedInicio])
 
   useEffect(() => {
+    trackEvent('inicio_view')
+    if (window.location.search.includes('action=novo-cliente')) {
+      setAutoOpenNovoCliente(true)
+      setShowWizard(true)
+      window.history.replaceState(null, '', '/inicio')
+    }
+  }, [])
+
+  useEffect(() => {
     fetchData()
 
     // Realtime subscription
@@ -447,10 +462,35 @@ export default function InicioPage() {
             </h1>
             <p className="text-sm text-text-secondary">{profile?.nome_loja}</p>
           </div>
-          <div className="flex-shrink-0">
-            <PwaInstallButton />
-          </div>
+          <PwaInstallButton />
         </div>
+
+        {!assinaturaAtiva && (
+          <Link href="/ajustes/plano" className="mt-6 block">
+            <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-600 p-[1px] shadow-sm transition-transform active:scale-[0.98]">
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-[#02090A] px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-500/20">
+                    <SparklesIcon className="h-5 w-5 text-yellow-500" />
+                  </div>
+                  <div>
+                    <strong className="block text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500 tracking-wide uppercase">
+                      Assinar Caderneta Pro
+                    </strong>
+                    <span className="text-xs font-medium text-gray-400">
+                      {diasRestantes > 0 
+                        ? `Ainda restam ${diasRestantes} dias grátis` 
+                        : 'Seu período grátis acabou'}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
+                  <span className="text-white text-lg leading-none font-light">›</span>
+                </div>
+              </div>
+            </div>
+          </Link>
+        )}
 
         <div className="mt-6">
           <StatsBar
@@ -551,8 +591,10 @@ export default function InicioPage() {
       {showWizard && (
         <WizardVenda
           open={showWizard}
+          defaultNovoCliente={autoOpenNovoCliente}
           onClose={() => {
             setShowWizard(false)
+            setAutoOpenNovoCliente(false)
             fetchData()
           }}
         />

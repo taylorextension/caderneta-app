@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import * as fbq from '@/lib/fpixel'
+import { trackEvent } from '@/lib/analytics'
 import { createClient } from '@/lib/supabase/client'
 import { cadastroSchema } from '@/lib/validators'
 import { useUIStore } from '@/stores/ui-store'
@@ -24,6 +25,10 @@ export default function CadastroPage() {
     senha: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    trackEvent('cadastro_view')
+  }, [])
 
   function validateField(field: string, value: string) {
     const result = cadastroSchema.safeParse({ ...form, [field]: value })
@@ -61,12 +66,18 @@ export default function CadastroPage() {
       const { data, error } = await supabase.auth.signUp({
         email: form.email,
         password: form.senha,
+        options: {
+          data: {
+            nome: form.nome,
+            telefone: form.telefone,
+          },
+        },
       })
 
       if (error) throw error
       if (!data.user) throw new Error('Erro ao criar conta')
 
-      // Usa upsert para evitar erro se o profile já existir (trigger ou race condition)
+      // Se Logado automaticamente (Confirmação de Email desativada), tenta criar o profile:
       const { error: profileError } = await supabase.from('profiles').upsert(
         {
           id: data.user.id,
@@ -77,12 +88,12 @@ export default function CadastroPage() {
         { onConflict: 'id' }
       )
 
-      // Ignora erro de profile se a conta foi criada — o setup vai completar depois
       if (profileError) {
         console.warn('Aviso profile:', profileError.message)
       }
 
       fbq.event('CompleteRegistration')
+      trackEvent('cadastro_submit')
 
       router.push('/setup')
     } catch (err) {
@@ -98,21 +109,46 @@ export default function CadastroPage() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen flex flex-col justify-center px-6 py-12">
+      <div className="min-h-screen flex flex-col justify-center px-6 py-10">
         <div className="w-full max-w-sm lg:max-w-md mx-auto">
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-4">
             <LogoAnimated
-              width={192}
-              height={192}
-              className="h-48 w-auto"
+              width={128}
+              height={128}
+              className="h-32 w-auto"
               priority
             />
           </div>
-          <p className="text-sm text-text-secondary mt-1 mb-8">
-            Organize seu fiado digital
-          </p>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Trust block — valor + preço */}
+          <div className="text-center mb-6">
+            <h1 className="text-xl font-bold text-text-primary">
+              Teste grátis por 7 dias
+            </h1>
+            <p className="text-sm text-text-secondary mt-1">
+              Depois, R$ 29,90/mês. Cancele quando quiser.
+            </p>
+          </div>
+
+          <ul className="space-y-2 mb-6">
+            {[
+              'Controle vendas a prazo e fiado',
+              'Envie cobranças por WhatsApp',
+              'Receba por Pix com QR Code',
+            ].map((benefit) => (
+              <li
+                key={benefit}
+                className="flex items-center gap-2 text-sm text-text-primary"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success/10 text-success shrink-0">
+                  ✓
+                </span>
+                {benefit}
+              </li>
+            ))}
+          </ul>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             <Input
               label="Nome"
               type="text"
@@ -155,8 +191,12 @@ export default function CadastroPage() {
             />
 
             <Button type="submit" loading={loading} className="w-full">
-              Criar conta
+              Criar conta grátis
             </Button>
+
+            <p className="text-center text-xs text-text-muted">
+              Sem cartão agora
+            </p>
           </form>
 
           <p className="mt-6 text-center text-sm text-text-secondary">

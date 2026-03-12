@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { isOnboardingComplete } from '@/lib/onboarding'
 import type { Profile } from '@/types/database'
 
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -160,10 +161,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-bg-app">
       <Sidebar />
-      <div className="pb-20 lg:pb-0 lg:ml-[240px]">
+      <div className={`lg:ml-[240px] ${pathname === '/ajustes/plano' ? '' : 'pb-20 lg:pb-0'}`}>
         <div className="lg:max-w-4xl lg:mx-auto lg:px-8">{children}</div>
       </div>
-      <BottomNav />
+      {pathname !== '/ajustes/plano' && <BottomNav />}
       <PwaUpdateNotification />
     </div>
   )

@@ -25,6 +25,7 @@ export function FAB({ onClick, className }: FABProps) {
         'shadow-[0_4px_12px_rgba(0,0,0,0.15)]',
         className
       )}
+      id="fab-new-sale"
     >
       <PlusIcon className="h-6 w-6" />
     </motion.button>

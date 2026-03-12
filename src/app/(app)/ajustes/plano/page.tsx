@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTrial } from '@/hooks/use-trial'
 import { useAuthStore } from '@/stores/auth-store'
 import { createClient } from '@/lib/supabase/client'
+import { trackEvent } from '@/lib/analytics'
 import { PageTransition } from '@/components/layout/page-transition'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,7 +18,6 @@ const CHECKOUT_URL = 'https://pay.cakto.com.br/qvw9jmk_792944'
 const FEATURES = [
   'Clientes ilimitados',
   'IA escreve cobranças personalizadas',
-  'Escaneia notas com câmera',
   'Histórico completo de pagamentos',
   'Saiba se abriram sua cobrança',
 ]
@@ -65,7 +65,7 @@ export default function PlanoPage() {
   }
 
   // Calcular progresso (14 dias de trial)
-  const DIAS_TRIAL = 14
+  const DIAS_TRIAL = 7
   const diasUsados = Math.max(0, DIAS_TRIAL - diasRestantes)
   const progresso = Math.min(100, (diasUsados / DIAS_TRIAL) * 100)
   const trialAcabando =
@@ -89,7 +89,7 @@ export default function PlanoPage() {
           {assinaturaAtiva ? (
             <>
               <p className="text-base font-semibold text-[#02090A] mb-2">
-                Assinatura ativa
+                Plano Pro ativo
               </p>
               <p className="text-sm text-[#6B7280]">
                 Seu acesso está liberado. O app não vai mais exibir contagem do
@@ -150,11 +150,12 @@ export default function PlanoPage() {
 
               <Button
                 onClick={() => {
+                  trackEvent('upgrade_cta_clicked')
                   window.location.href = buildCheckoutUrl(profile, email)
                 }}
                 className="w-full mt-4"
               >
-                Assinar agora
+                Assinar Pro
               </Button>
             </div>
           </Card>

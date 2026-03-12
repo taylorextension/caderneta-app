@@ -10,9 +10,10 @@ export function useTrial() {
   const profile = useAuthStore((s) => s.profile)
   const profileId = profile?.id
   const assinaturaAtiva = profile?.assinatura_ativa
-  const [now, setNow] = useState(() => Date.now())
+  const [now, setNow] = useState<number | null>(null)
 
   useEffect(() => {
+    setNow(Date.now()) // Set immediately on client mount to bypass SSR warning
     if (!profileId || assinaturaAtiva) return
 
     const interval = window.setInterval(() => {
@@ -42,7 +43,7 @@ export function useTrial() {
     }
   }
 
-  const diasRestantes = getTrialDaysRemaining(profile, now)
+  const diasRestantes = now ? getTrialDaysRemaining(profile, now) : 7
   const trialAtivo = diasRestantes > 0
 
   return {

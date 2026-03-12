@@ -34,37 +34,37 @@ const inter = localFont({
 })
 
 export const metadata: Metadata = {
-  title: 'Caderneta - Fiado Digital',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  title: 'Pagamento fácil via Pix | Caderneta',
   description:
-    'Organize seu fiado digital. Controle vendas a prazo, envie lembretes via WhatsApp e receba por Pix.',
+    'Confira o valor e faça seu pagamento no Pix em poucos toques, de forma simples',
   manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/logo.png', sizes: 'any', type: 'image/png' },
     ],
-    apple: '/apple-touch-icon.png',
+    apple: '/logo.png',
   },
   openGraph: {
-    title: 'Caderneta - Fiado Digital',
+    title: 'Pagamento fácil via Pix | Caderneta',
     description:
-      'Organize seu fiado digital. Controle vendas a prazo, envie lembretes via WhatsApp e receba por Pix.',
+      'Confira o valor e faça seu pagamento no Pix em poucos toques, de forma simples',
     images: [
       {
-        url: '/icon-512x512.png',
+        url: '/logo.png',
         width: 512,
         height: 512,
-        alt: 'Caderneta - Fiado Digital',
+        alt: 'Pagamento fácil via Pix | Caderneta',
       },
     ],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Caderneta - Fiado Digital',
+    title: 'Pagamento fácil via Pix | Caderneta',
     description:
-      'Organize seu fiado digital. Controle vendas a prazo, envie lembretes via WhatsApp e receba por Pix.',
-    images: ['/icon-512x512.png'],
+      'Confira o valor e faça seu pagamento no Pix em poucos toques, de forma simples',
+    images: ['/logo.png'],
   },
 }
 

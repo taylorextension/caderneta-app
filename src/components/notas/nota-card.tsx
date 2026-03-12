@@ -216,6 +216,7 @@ export function NotaCard({
               size="sm"
               onClick={onCobrar}
               className="flex-1 gap-1.5"
+              id="btn-whatsapp-share"
             >
               <WhatsAppIcon className="h-3.5 w-3.5" />
               Cobrar

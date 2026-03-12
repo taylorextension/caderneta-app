@@ -5,6 +5,7 @@ import { CheckIcon } from '@heroicons/react/24/solid'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/auth-store'
 import { createClient } from '@/lib/supabase/client'
+import { trackEvent } from '@/lib/analytics'
 import type { Profile } from '@/types/database'
 
 const CHECKOUT_URL = 'https://pay.cakto.com.br/qvw9jmk_792944'
@@ -12,7 +13,6 @@ const CHECKOUT_URL = 'https://pay.cakto.com.br/qvw9jmk_792944'
 const features = [
   'Clientes ilimitados',
   'IA escreve cobranças personalizadas',
-  'Escaneia notas com câmera',
   'Histórico completo de pagamentos',
   'Saiba se abriram sua cobrança',
 ]
@@ -54,14 +54,16 @@ export function PaywallModal() {
       if (user?.email) setEmail(user.email)
     }
     getEmail()
+    trackEvent('paywall_view')
   }, [])
 
   function handleAssinar() {
+    trackEvent('checkout_started')
     window.location.href = buildCheckoutUrl(profile, email)
   }
 
   return (
-    <div className="fixed inset-0 z-[60] bg-white flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm lg:max-w-md text-center">
         <h1 className="text-xl font-semibold text-text-primary mb-3">
           Seu período grátis acabou
@@ -80,7 +82,7 @@ export function PaywallModal() {
         </ul>
 
         <Button onClick={handleAssinar} className="w-full">
-          Assinar · R$ 29,90/mês
+           Assinar Pro · R$ 29,90/mês
         </Button>
 
         <p className="mt-4 text-xs text-text-muted">Cancele quando quiser</p>

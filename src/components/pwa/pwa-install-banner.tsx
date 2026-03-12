@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
+import { trackEvent } from '@/lib/analytics'
 import { Button } from '@/components/ui/button'
 import {
   DevicePhoneMobileIcon,
@@ -25,6 +26,7 @@ export function PwaInstallButton() {
         transition={{ type: 'spring', stiffness: 300, damping: 22, delay: 0.4 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => {
+          trackEvent('pwa_install_clicked')
           if (hasNativePrompt) {
             triggerInstall()
           } else if (isIos) {

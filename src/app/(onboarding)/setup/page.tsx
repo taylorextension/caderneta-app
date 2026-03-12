@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import { createClient } from '@/lib/supabase/client'
+import { trackEvent } from '@/lib/analytics'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,6 +34,7 @@ export default function SetupPage() {
       return
     }
     setStep(2)
+    trackEvent('setup_step_completed', { step: 'nome_loja' })
   }
 
   async function handleSavePix() {
@@ -106,6 +108,7 @@ export default function SetupPage() {
       }
 
       setStep(3)
+      trackEvent('setup_step_completed', { step: 'pix_configurado' })
     } catch (err: unknown) {
       const message =
         err && typeof err === 'object' && 'message' in err
@@ -180,6 +183,7 @@ export default function SetupPage() {
       }
 
       setStep(3)
+      trackEvent('setup_step_completed', { step: 'pix_pulado' })
     } catch (err: unknown) {
       const message =
         err && typeof err === 'object' && 'message' in err
@@ -319,7 +323,7 @@ export default function SetupPage() {
                 clientes.
               </p>
 
-              <Button onClick={() => router.push('/inicio')} className="w-full">
+              <Button onClick={() => router.push('/inicio?action=novo-cliente')} className="w-full">
                 Cadastrar primeiro cliente
               </Button>
               <button

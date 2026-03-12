@@ -16,6 +16,7 @@ import {
   QrCodeIcon,
   CreditCardIcon,
   ChevronRightIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline'
 
 const menuItems = [

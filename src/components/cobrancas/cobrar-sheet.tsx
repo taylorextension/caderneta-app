@@ -9,6 +9,7 @@ import { useUIStore } from '@/stores/ui-store'
 import { createClient } from '@/lib/supabase/client'
 import { openWhatsApp } from '@/lib/whatsapp'
 import { formatCurrencyShort } from '@/lib/format'
+import { trackEvent } from '@/lib/analytics'
 import type { NotaComCliente } from '@/types/database'
 
 interface CobrarSheetProps {
@@ -110,6 +111,7 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
       }
 
       addToast({ message: 'Cobrança registrada', type: 'success' })
+      trackEvent('first_cobranca_sent')
       onClose()
     } catch {
       addToast({ message: 'Erro ao registrar cobrança', type: 'error' })
