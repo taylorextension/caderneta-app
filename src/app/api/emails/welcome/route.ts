@@ -2,20 +2,6 @@ import { Resend } from 'resend';
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-// Supabase Admin client for fetching user email
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
-
 export async function POST(req: Request) {
   try {
     // Security check first: Verify the Bearer token (Service Role Key)
@@ -36,6 +22,25 @@ export async function POST(req: Request) {
       console.error('Missing id or name in record:', record);
       return NextResponse.json({ error: 'Missing id or name in record' }, { status: 400 });
     }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const resendApiKey = process.env.RESEND_API_KEY;
+
+    if (!supabaseUrl || !serviceRoleKey || !resendApiKey) {
+      console.error('Missing required environment variables for welcome email route');
+      return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+    }
+
+    const resend = new Resend(resendApiKey);
+
+    // Supabase Admin client for fetching user email
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
 
     // Fetch email from auth.users (public.profiles doesn't have it)
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(id);
