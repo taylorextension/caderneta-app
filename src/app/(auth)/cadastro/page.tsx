@@ -120,33 +120,11 @@ export default function CadastroPage() {
             />
           </div>
 
-          {/* Trust block — valor + preço */}
           <div className="text-center mb-6">
-            <h1 className="text-xl font-bold text-text-primary">
-              Teste grátis por 7 dias
-            </h1>
             <p className="text-sm text-text-secondary mt-1">
-              Depois, R$ 29,90/mês. Cancele quando quiser.
+              Crie sua conta gratuitamente e comece a usar.
             </p>
           </div>
-
-          <ul className="space-y-2 mb-6">
-            {[
-              'Controle vendas a prazo e fiado',
-              'Envie cobranças por WhatsApp',
-              'Receba por Pix com QR Code',
-            ].map((benefit) => (
-              <li
-                key={benefit}
-                className="flex items-center gap-2 text-sm text-text-primary"
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success/10 text-success shrink-0">
-                  ✓
-                </span>
-                {benefit}
-              </li>
-            ))}
-          </ul>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <Input
