@@ -121,6 +121,9 @@ export default function CadastroPage() {
           </div>
 
           <div className="text-center mb-6">
+            <h1 className="text-2xl font-black text-text-primary">
+              Teste grátis por 7 dias
+            </h1>
             <p className="text-sm text-text-secondary mt-1">
               Crie sua conta gratuitamente e comece a usar.
             </p>
