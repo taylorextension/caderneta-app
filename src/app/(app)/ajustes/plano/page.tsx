@@ -64,7 +64,7 @@ export default function PlanoPage() {
     return <PaywallModal />
   }
 
-  // Calcular progresso (14 dias de trial)
+  // Calcular progresso (7 dias de trial)
   const DIAS_TRIAL = 7
   const diasUsados = Math.max(0, DIAS_TRIAL - diasRestantes)
   const progresso = Math.min(100, (diasUsados / DIAS_TRIAL) * 100)
@@ -76,63 +76,65 @@ export default function PlanoPage() {
       <div className="p-6 lg:px-0 lg:py-8 lg:max-w-lg lg:mx-auto">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1 text-sm text-[#6B7280] mb-4"
+          className="flex items-center gap-1 text-sm text-text-secondary mb-4"
         >
           <ArrowLeftIcon className="h-4 w-4" />
           Ajustes
         </button>
 
-        <h1 className="text-xl font-semibold text-[#02090A] mb-6">Meu plano</h1>
+        <h1 className="text-xl font-semibold text-text-primary mb-5">Meu plano</h1>
 
-        {/* Card do trial */}
+        {/* Card do trial / assinatura */}
         <Card>
           {assinaturaAtiva ? (
-            <>
-              <p className="text-base font-semibold text-[#02090A] mb-2">
-                Plano Pro ativo
-              </p>
-              <p className="text-sm text-[#6B7280]">
-                Seu acesso está liberado. O app não vai mais exibir contagem do
-                período grátis enquanto a assinatura estiver ativa.
-              </p>
-            </>
+            <div className="flex items-start gap-3">
+              <div className="h-9 w-9 rounded-full bg-[#9FE870]/15 flex items-center justify-center shrink-0">
+                <CheckCircleIcon className="h-5 w-5 text-[#2F5711]" />
+              </div>
+              <div>
+                <p className="text-base font-semibold text-text-primary">
+                  Plano Pro ativo
+                </p>
+                <p className="text-sm text-text-secondary mt-1">
+                  Seu acesso está liberado. Aproveite todos os recursos.
+                </p>
+              </div>
+            </div>
           ) : (
             <>
-              <p className="text-base font-semibold text-[#02090A] mb-4">
+              <p className="text-sm font-semibold text-text-primary mb-3">
                 Período grátis
               </p>
 
-              <div className="h-2 bg-zinc-200 rounded-full w-full mb-2">
+              <div className="h-1.5 bg-[#D6D8D6] rounded-full w-full mb-1.5">
                 <div
-                  className={`h-2 rounded-full transition-all ${
-                    trialAcabando ? 'bg-red-500' : 'bg-black'
+                  className={`h-1.5 rounded-full transition-all ${
+                    trialAcabando ? 'bg-[#A8200D]' : 'bg-[#9FE870]'
                   }`}
                   style={{ width: `${progresso}%` }}
                 />
               </div>
 
-              <p className="text-xs text-[#6B7280] mb-4">
-                {diasRestantes} dias restantes
-              </p>
-
-              <p className="text-sm text-[#6B7280]">
-                Todos os recursos estão liberados durante o período grátis.
+              <p className="text-xs text-text-muted">
+                {diasRestantes} {diasRestantes === 1 ? 'dia restante' : 'dias restantes'}
               </p>
             </>
           )}
         </Card>
 
         {/* O que está incluso */}
-        <div className="mt-6">
-          <p className="text-sm font-semibold text-[#02090A] mb-3">
+        <div className="mt-5">
+          <p className="text-sm font-semibold text-text-primary mb-2.5">
             O que está incluso:
           </p>
           <Card>
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {FEATURES.map((feature) => (
-                <div key={feature} className="flex items-center gap-3">
-                  <CheckCircleIcon className="h-5 w-5 text-black shrink-0" />
-                  <span className="text-sm text-[#02090A]">{feature}</span>
+                <div key={feature} className="flex items-center gap-2.5">
+                  <div className="h-5 w-5 rounded-full bg-[#9FE870]/15 flex items-center justify-center shrink-0">
+                    <CheckCircleIcon className="h-3 w-3 text-[#2F5711]" />
+                  </div>
+                  <span className="text-sm text-text-primary">{feature}</span>
                 </div>
               ))}
             </div>
@@ -141,10 +143,12 @@ export default function PlanoPage() {
 
         {/* Card de preço */}
         {!assinaturaAtiva && (
-          <Card className="mt-6">
-            <div className="text-center py-2">
-              <p className="text-2xl font-bold text-[#02090A]">R$ 29,90/mês</p>
-              <p className="text-xs text-[#9CA3AF] mt-1">
+          <Card className="mt-5">
+            <div className="text-center py-1">
+              <p className="text-2xl font-bold text-text-primary">
+                R$ 29,90<span className="text-sm font-medium text-text-muted">/mês</span>
+              </p>
+              <p className="text-xs text-text-muted mt-1">
                 Cancele quando quiser.
               </p>
 

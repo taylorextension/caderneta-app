@@ -203,7 +203,7 @@ export default function SetupPage() {
             <div
               key={s}
               className={`h-2 w-2 rounded-full transition-colors ${
-                s === step ? 'bg-black' : 'bg-border'
+                s === step ? 'bg-[#163300]' : 'bg-border'
               }`}
             />
           ))}

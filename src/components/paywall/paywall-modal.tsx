@@ -63,29 +63,39 @@ export function PaywallModal() {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-sm lg:max-w-md text-center">
-        <h1 className="text-xl font-semibold text-text-primary mb-3">
+    <div className="fixed inset-0 z-[100] bg-bg-app flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-sm text-center">
+        <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-[#9FE870]/15 mb-4">
+          <svg className="h-6 w-6 text-[#163300]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+        </div>
+
+        <h1 className="text-xl font-semibold text-text-primary mb-1.5">
           Seu período grátis acabou
         </h1>
-        <p className="text-sm text-text-secondary mb-8">
-          Suas notas e clientes estão todos salvos e seguros.
+        <p className="text-sm text-text-secondary mb-5">
+          Suas notas e clientes estão salvos e seguros.
         </p>
 
-        <ul className="space-y-3 mb-8 text-left">
-          {features.map((feature) => (
-            <li key={feature} className="flex items-center gap-3">
-              <CheckIcon className="h-5 w-5 text-success shrink-0" />
-              <span className="text-sm text-text-primary">{feature}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="bg-bg-card rounded-xl border border-divider p-4 mb-5">
+          <ul className="space-y-2.5 text-left">
+            {features.map((feature) => (
+              <li key={feature} className="flex items-center gap-2.5">
+                <div className="h-5 w-5 rounded-full bg-[#9FE870]/15 flex items-center justify-center shrink-0">
+                  <CheckIcon className="h-3 w-3 text-[#2F5711]" />
+                </div>
+                <span className="text-sm text-text-primary">{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         <Button onClick={handleAssinar} className="w-full">
-           Assinar Pro · R$ 29,90/mês
+          Assinar Pro · R$ 29,90/mês
         </Button>
 
-        <p className="mt-4 text-xs text-text-muted">Cancele quando quiser</p>
+        <p className="mt-3 text-xs text-text-muted">Cancele quando quiser</p>
       </div>
     </div>
   )

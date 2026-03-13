@@ -48,7 +48,7 @@ export function PwaInstallButton() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black/50 flex items-end justify-center p-4"
+            className="fixed inset-0 z-[200] bg-[#163300]/50 flex items-end justify-center p-4"
             onClick={() => setShowIosModal(false)}
           >
             <motion.div
@@ -60,7 +60,7 @@ export function PwaInstallButton() {
               className="w-full max-w-md bg-white rounded-2xl overflow-hidden"
             >
               <div className="px-6 pt-6 pb-4 text-center border-b border-divider">
-                <div className="mx-auto h-12 w-12 rounded-2xl bg-[#F1F1EF] flex items-center justify-center mb-3">
+                <div className="mx-auto h-12 w-12 rounded-2xl bg-[#F5F7F5] flex items-center justify-center mb-3">
                   <DevicePhoneMobileIcon className="h-6 w-6 text-[#02090A]" />
                 </div>
                 <h2 className="text-lg font-semibold text-[#02090A]">

@@ -401,7 +401,7 @@ export default function ClienteDetailPage() {
           </h1>
           <button
             onClick={openEditCliente}
-            className="shrink-0 px-2.5 py-1 rounded-full bg-black/5 text-[11px] font-medium text-text-secondary hover:bg-black/10 transition-colors"
+            className="shrink-0 px-2.5 py-1 rounded-full bg-[#163300]/5 text-[11px] font-medium text-text-secondary hover:bg-[#163300]/10 transition-colors"
           >
             Editar
           </button>

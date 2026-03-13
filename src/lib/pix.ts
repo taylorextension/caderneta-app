@@ -215,7 +215,7 @@ export async function gerarQRDataURL(p: PixParams): Promise<string> {
   return QRCode.toDataURL(brCode, {
     width: 256,
     margin: 2,
-    color: { dark: '#000000', light: '#FFFFFF' },
+    color: { dark: '#163300', light: '#FFFFFF' },
   })
 }
 

@@ -14,12 +14,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-black text-white hover:opacity-90',
+  primary: 'bg-[#163300] text-white hover:opacity-90',
   secondary:
-    'bg-white text-black shadow-[inset_0_0_0_1px_rgb(212,212,216)] hover:bg-zinc-50',
-  whatsapp: 'bg-[#25D366] text-white hover:opacity-90',
-  ghost: 'bg-transparent text-text-secondary hover:bg-[#F1F1EF]',
-  danger: 'bg-red-50 text-red-600 border border-red-200',
+    'bg-white text-[#163300] shadow-[inset_0_0_0_1px_#D6D8D6] hover:bg-[#F5F7F5]',
+  whatsapp: 'bg-[#163300] text-white hover:opacity-90',
+  ghost: 'bg-transparent text-text-secondary hover:bg-[#163300]/5',
+  danger: 'bg-red-50 text-[#A8200D] border border-red-200',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {

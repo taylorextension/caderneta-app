@@ -78,14 +78,14 @@ export function Sidebar() {
               className={cn(
                 'relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
                 active
-                  ? 'text-black bg-black/5'
-                  : 'text-text-secondary hover:bg-black/[0.03] hover:text-text-primary'
+                  ? 'text-[#163300] bg-[#163300]/5'
+                  : 'text-text-secondary hover:bg-[#163300]/[0.03] hover:text-text-primary'
               )}
             >
               {active && (
                 <motion.div
                   layoutId="sidebar-indicator"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-black rounded-full"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#9FE870] rounded-full"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}

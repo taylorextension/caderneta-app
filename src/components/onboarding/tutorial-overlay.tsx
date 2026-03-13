@@ -176,7 +176,7 @@ export function TutorialOverlay({ steps }: TutorialOverlayProps) {
               </button>
               <Button
                 size="sm"
-                className="bg-white text-black hover:bg-gray-200 h-8 text-xs px-4"
+                className="bg-white text-[#163300] hover:bg-gray-200 h-8 text-xs px-4"
                 onClick={() => {
                   trackEvent('tooltip_step_completed', { step: currentStep + 1 })
                   if (isLast) {

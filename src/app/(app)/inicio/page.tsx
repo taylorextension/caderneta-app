@@ -19,7 +19,6 @@ import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ShoppingBagIcon } from '@heroicons/react/24/outline'
-import { SparklesIcon } from '@heroicons/react/24/solid'
 import type { InicioData, NotaComCliente } from '@/types/database'
 
 export default function InicioPage() {
@@ -466,27 +465,30 @@ export default function InicioPage() {
         </div>
 
         {!assinaturaAtiva && (
-          <Link href="/ajustes/plano" className="mt-6 block">
-            <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-600 p-[1px] shadow-sm transition-transform active:scale-[0.98]">
-              <div className="flex items-center justify-between gap-3 rounded-xl bg-[#02090A] px-4 py-3">
+          <Link href="/ajustes/plano" className="mt-5 block group">
+            <div className="relative overflow-hidden rounded-2xl bg-[#163300] px-4 py-3.5 transition-transform active:scale-[0.98]">
+              {/* Accent glow */}
+              <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-[#9FE870] blur-2xl opacity-25" />
+
+              <div className="relative flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-500/20">
-                    <SparklesIcon className="h-5 w-5 text-yellow-500" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#9FE870]/20 shrink-0">
+                    <span className="text-lg">⚡</span>
                   </div>
                   <div>
-                    <strong className="block text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500 tracking-wide uppercase">
+                    <strong className="block text-sm font-semibold text-white">
                       Assinar Caderneta Pro
                     </strong>
-                    <span className="text-xs font-medium text-gray-400">
-                      {diasRestantes > 0 
-                        ? `Ainda restam ${diasRestantes} dias grátis` 
+                    <span className="text-xs text-white/55">
+                      {diasRestantes > 0
+                        ? `${diasRestantes} ${diasRestantes === 1 ? 'dia grátis restante' : 'dias grátis restantes'}`
                         : 'Seu período grátis acabou'}
                     </span>
                   </div>
                 </div>
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
-                  <span className="text-white text-lg leading-none font-light">›</span>
-                </div>
+                <span className="text-xs font-semibold px-3.5 py-1.5 rounded-full bg-[#9FE870] text-[#163300] shrink-0 transition-transform group-hover:scale-105">
+                  Assinar
+                </span>
               </div>
             </div>
           </Link>

@@ -49,7 +49,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-[100] bg-[#F1F1EF] border-t border-divider lg:hidden will-change-transform"
+      className="fixed bottom-0 left-0 right-0 z-[100] bg-[#F5F7F5] border-t border-divider lg:hidden will-change-transform"
       style={{
         position: 'fixed',
         bottom: 0,
@@ -68,13 +68,13 @@ export function BottomNav() {
               href={item.href}
               className={cn(
                 'flex-1 flex flex-col items-center justify-center gap-1 relative transition-colors duration-200',
-                active ? 'text-black' : 'text-text-muted'
+                active ? 'text-[#163300]' : 'text-text-muted'
               )}
             >
               {active && (
                 <motion.div
                   layoutId="nav-indicator"
-                  className="absolute -top-[9px] left-1/2 -translate-x-1/2 w-10 h-[3px] bg-black rounded-full"
+                  className="absolute -top-[9px] left-1/2 -translate-x-1/2 w-10 h-[3px] bg-[#9FE870] rounded-full"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}

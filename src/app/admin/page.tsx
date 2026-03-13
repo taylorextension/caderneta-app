@@ -114,13 +114,13 @@ export default function AdminPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#F1F1EF]">
+    <div className="min-h-screen bg-[#F5F7F5]">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-divider">
         <div className="px-4 py-3 flex items-center gap-3 max-w-2xl mx-auto">
           <button
             onClick={() => router.push('/inicio')}
-            className="p-1.5 rounded-lg hover:bg-[#F1F1EF] transition-colors"
+            className="p-1.5 rounded-lg hover:bg-[#F5F7F5] transition-colors"
           >
             <ChevronLeftIcon className="h-5 w-5" />
           </button>
@@ -128,7 +128,7 @@ export default function AdminPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="p-1.5 rounded-lg hover:bg-[#F1F1EF] transition-colors"
+            className="p-1.5 rounded-lg hover:bg-[#F5F7F5] transition-colors"
           >
             <ArrowPathIcon
               className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`}
@@ -226,8 +226,8 @@ export default function AdminPage() {
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="bg-white rounded-xl p-4 animate-pulse">
-                  <div className="h-4 bg-[#F1F1EF] rounded w-1/3 mb-2" />
-                  <div className="h-3 bg-[#F1F1EF] rounded w-2/3" />
+                  <div className="h-4 bg-[#F5F7F5] rounded w-1/3 mb-2" />
+                  <div className="h-3 bg-[#F5F7F5] rounded w-2/3" />
                 </div>
               ))}
             </div>

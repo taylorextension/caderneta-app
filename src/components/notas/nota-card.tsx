@@ -161,68 +161,75 @@ export function NotaCard({
   return (
     <>
       <div className="py-2">
-        {/* Row 1: Avatar + Name + Edit pill */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex gap-2.5">
+          {/* Avatar column */}
           {showAvatar && (
-            <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center text-xs font-semibold shrink-0">
+            <div className="h-9 w-9 rounded-full bg-[#163300] text-white flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5">
               {(cliente.nome?.[0] || 'C').toUpperCase()}
             </div>
           )}
-          <p className="text-sm font-semibold text-text-primary truncate flex-1">
-            {displayName}
-          </p>
-          {(onEdit || onDelete) && (
-            <button
-              onClick={() => setShowEditSheet(true)}
-              className="shrink-0 px-2.5 py-1 rounded-full bg-black/5 text-[11px] font-medium text-text-secondary hover:bg-black/10 transition-colors"
-            >
-              Editar
-            </button>
-          )}
-        </div>
 
-        {/* Row 2: Value + Status */}
-        <p className="text-sm text-text-secondary mt-1">
-          {formatCurrencyShort(Number(nota.valor))} · {getStatusText()}
-        </p>
+          {/* Content column */}
+          <div className="flex-1 min-w-0">
+            {/* Row 1: Name + Edit pill */}
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-text-primary truncate flex-1">
+                {displayName}
+              </p>
+              {(onEdit || onDelete) && (
+                <button
+                  onClick={() => setShowEditSheet(true)}
+                  className="shrink-0 px-2.5 py-1 rounded-full bg-[#163300]/5 text-[11px] font-medium text-text-secondary hover:bg-[#163300]/10 transition-colors"
+                >
+                  Editar
+                </button>
+              )}
+            </div>
 
-        {/* Row 3: Last action */}
-        {ultimaAcao && (
-          <p className="text-xs text-text-secondary mt-1.5 flex items-center gap-1.5">
-            {(() => {
-              const AcaoIcon = getAcaoIcon(ultimaAcao.tipo)
-              return <AcaoIcon className="h-3.5 w-3.5 shrink-0" />
-            })()}
-            <span>
-              {getAcaoText(ultimaAcao.tipo)} ·{' '}
-              {formatAcaoTime(ultimaAcao.created_at)}
-            </span>
-          </p>
-        )}
+            {/* Row 2: Value + Status */}
+            <p className="text-sm text-text-secondary mt-0.5">
+              {formatCurrencyShort(Number(nota.valor))} · {getStatusText()}
+            </p>
 
-        {/* Row 4: Action buttons */}
-        {nota.status !== 'pago' && (
-          <div className="flex gap-2 mt-2.5">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowConfirm(true)}
-              className="flex-1"
-            >
-              Marcar pago
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={onCobrar}
-              className="flex-1 gap-1.5"
-              id="btn-whatsapp-share"
-            >
-              <WhatsAppIcon className="h-3.5 w-3.5" />
-              Cobrar
-            </Button>
+            {/* Row 3: Last action */}
+            {ultimaAcao && (
+              <p className="text-xs text-text-secondary mt-1.5 flex items-center gap-1.5">
+                {(() => {
+                  const AcaoIcon = getAcaoIcon(ultimaAcao.tipo)
+                  return <AcaoIcon className="h-3.5 w-3.5 shrink-0" />
+                })()}
+                <span>
+                  {getAcaoText(ultimaAcao.tipo)} ·{' '}
+                  {formatAcaoTime(ultimaAcao.created_at)}
+                </span>
+              </p>
+            )}
+
+            {/* Row 4: Action buttons */}
+            {nota.status !== 'pago' && (
+              <div className="flex gap-2 mt-2.5">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowConfirm(true)}
+                  className="flex-1"
+                >
+                  Marcar pago
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={onCobrar}
+                  className="flex-1 gap-1.5"
+                  id="btn-whatsapp-share"
+                >
+                  <WhatsAppIcon className="h-3.5 w-3.5" />
+                  Cobrar
+                </Button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Payment confirmation modal */}

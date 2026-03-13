@@ -8,9 +8,9 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  pendente: 'bg-amber-100 text-amber-800',
-  pago: 'bg-green-100 text-green-800',
-  vencido: 'bg-red-100 text-red-800',
+  pendente: 'bg-[#EDC843]/15 text-[#3A341C]',
+  pago: 'bg-[#9FE870]/15 text-[#2F5711]',
+  vencido: 'bg-[#A8200D]/10 text-[#A8200D]',
 }
 
 export function Badge({ variant, children }: BadgeProps) {

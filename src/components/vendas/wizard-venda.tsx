@@ -253,7 +253,7 @@ export function WizardVenda({
             <div
               key={s}
               className={`h-2 w-2 rounded-full transition-colors ${
-                s === step ? 'bg-black' : 'bg-border'
+                s === step ? 'bg-[#163300]' : 'bg-border'
               }`}
             />
           ))}
@@ -446,7 +446,7 @@ export function WizardVenda({
                       onClick={() => selectVencimento(opt.days)}
                       className={`flex-1 min-w-[80px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
                         selected
-                          ? 'bg-black text-white border-black'
+                          ? 'bg-[#163300] text-white border-[#163300]'
                           : 'bg-white text-text-primary border-divider'
                       }`}
                     >
@@ -462,7 +462,7 @@ export function WizardVenda({
                 <label
                   className={`flex-1 min-w-[120px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer text-center ${
                     showCustomDate
-                      ? 'bg-black text-white border-black'
+                      ? 'bg-[#163300] text-white border-[#163300]'
                       : 'bg-white text-text-primary border-divider'
                   }`}
                 >
@@ -490,7 +490,7 @@ export function WizardVenda({
                   onClick={() => selectVencimento(null)}
                   className={`flex-1 min-w-[100px] rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
                     !vencimento && !showCustomDate
-                      ? 'bg-black text-white border-black'
+                      ? 'bg-[#163300] text-white border-[#163300]'
                       : 'bg-white text-text-primary border-divider'
                   }`}
                 >

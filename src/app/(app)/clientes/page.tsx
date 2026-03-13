@@ -223,7 +223,7 @@ export default function ClientesPage() {
                       />
 
                       {/* Avatar */}
-                      <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center text-xs font-semibold shrink-0">
+                      <div className="h-9 w-9 rounded-full bg-[#163300] text-white flex items-center justify-center text-xs font-semibold shrink-0">
                         {(c.nome?.[0] || 'C').toUpperCase()}
                       </div>
 

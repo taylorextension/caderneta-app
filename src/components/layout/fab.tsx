@@ -20,7 +20,7 @@ export function FAB({ onClick, className }: FABProps) {
       whileHover={{ scale: 1.05 }}
       className={cn(
         'fixed bottom-[88px] right-4 z-30 lg:bottom-8 lg:right-8',
-        'h-14 w-14 rounded-full bg-black text-white lg:h-16 lg:w-16',
+        'h-14 w-14 rounded-full bg-[#163300] text-white lg:h-16 lg:w-16',
         'flex items-center justify-center',
         'shadow-[0_4px_12px_rgba(0,0,0,0.15)]',
         className
