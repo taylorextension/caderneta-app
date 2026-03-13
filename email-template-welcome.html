@@ -1,83 +1,96 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caderneta - Acesso</title>
+    <title>Bem-vindo ao Caderneta</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #F8F9FA;
-            color: #111827;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F5F7F5;
+            color: #0E0F0C;
             margin: 0;
             padding: 0;
         }
-
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            background-color: #F5F7F5;
+            padding-bottom: 40px;
+        }
         .container {
-            max-width: 500px;
-            margin: 40px auto;
+            max-width: 600px;
+            margin: 0 auto;
             background-color: #FFFFFF;
-            border-radius: 12px;
-            padding: 32px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-top: 40px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .header {
+            background-color: #163300;
+            padding: 40px 32px;
             text-align: center;
         }
-
         .logo {
+            font-size: 28px;
+            font-weight: 800;
+            color: #9FE870;
+            letter-spacing: -1px;
+            text-decoration: none;
+        }
+        .content {
+            padding: 40px 32px;
+            text-align: center;
+        }
+        h1 {
             font-size: 24px;
             font-weight: 700;
-            color: #111827;
-            margin-bottom: 24px;
-            letter-spacing: -0.5px;
+            margin-bottom: 16px;
+            color: #0E0F0C;
         }
-
-        .content p {
+        p {
             font-size: 16px;
-            line-height: 1.5;
-            color: #4B5563;
+            line-height: 1.6;
+            color: #454745;
             margin-bottom: 24px;
         }
-
         .btn {
             display: inline-block;
-            background-color: #111827;
-            color: #FFFFFF !important;
+            background-color: #9FE870;
+            color: #163300 !important;
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 16px;
-            padding: 12px 24px;
-            border-radius: 8px;
-            transition: background-color 0.2s;
+            padding: 16px 32px;
+            border-radius: 12px;
+            transition: transform 0.2s;
         }
-
-        .btn:hover {
-            background-color: #374151;
-        }
-
         .footer {
-            margin-top: 32px;
+            padding: 32px;
+            text-align: center;
             font-size: 14px;
-            color: #9CA3AF;
+            color: #6A6C6A;
         }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <div class="logo">Caderneta</div>
-        <div class="content">
-            <!-- Usa .Data.nome para extrair especificamente o nome dos metadados -->
-            <p>Oi {{ .Data.nome }},</p>
-            <p>Clique no botão abaixo para acessar o Caderneta APP e confirmar seu cadastro:</p>
-            
-            <!-- .ConfirmationURL é obrigatório para validar a conta no banco do Supabase antes do primeiro login -->
-            <a href="{{ .ConfirmationURL }}" class="btn">Entrar no APP</a>
-        </div>
-        <div class="footer">
-            Se você não solicitou este e-mail, pode ignorá-lo com segurança.
+    <div class="wrapper">
+        <div class="container">
+            <div class="header">
+                <a href="https://caderneta.app" class="logo">Caderneta</a>
+            </div>
+            <div class="content">
+                <h1>Olá {{nome}}! 🚀</h1>
+                <p>Obrigado por escolher o <strong>Caderneta</strong>. Estamos muito felizes em ajudar você a organizar suas vendas e cobranças.</p>
+                <p>Prepare-se para ter o controle total do seu negócio na palma da mão.</p>
+                <a href="https://caderneta.app/inicio" class="btn">Começar Agora</a>
+            </div>
+            <div class="footer">
+                &copy; 2026 Caderneta App. Todos os direitos reservados.<br>
+                Este é um e-mail automático, por favor não responda.
+            </div>
         </div>
     </div>
 </body>
-
 </html>
