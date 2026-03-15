@@ -41,7 +41,7 @@ export function UserActionsSheet({
 }: UserActionsSheetProps) {
   if (!user) return null
 
-  const adminWhatsAppMessage = `Oi, ${user.nome || 'tudo bem'}! Aqui é o Junio do Caderneta.\nSeu acesso já está ativo.\nAcesse agora: https://caderneta.app/inicio\nQualquer dúvida, pode me chamar aqui mesmo!`
+  const adminWhatsAppMessage = `Oi, *${user.nome || 'você'}*! Aqui é o Junio do Caderneta.\n\nSeu acesso já está *ativo* e pronto para usar.\n\nAcesse agora:\nhttps://caderneta.app/inicio\n\nQualquer dúvida é só me chamar aqui!`
 
   const actions = [
     ...(user.telefone
