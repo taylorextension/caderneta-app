@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const { data: profiles, error } = await supabase
       .from('profiles')
       .select(
-        'id, nome, nome_loja, telefone, plano, assinatura_ativa, trial_fim, created_at, conta_teste'
+        'id, nome, nome_loja, telefone, plano, assinatura_ativa, trial_fim, created_at, conta_teste, whatsapp_admin_em'
       )
       .order('created_at', { ascending: false })
 
@@ -95,6 +95,7 @@ export async function PATCH(request: NextRequest) {
     if ('nome_loja' in updates) allowed.nome_loja = updates.nome_loja
     if ('telefone' in updates) allowed.telefone = updates.telefone
     if ('conta_teste' in updates) allowed.conta_teste = updates.conta_teste
+    if ('whatsapp_admin_em' in updates) allowed.whatsapp_admin_em = updates.whatsapp_admin_em
     allowed.updated_at = new Date().toISOString()
 
     const { error } = await supabase

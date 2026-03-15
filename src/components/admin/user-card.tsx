@@ -14,6 +14,7 @@ interface User {
   created_at: string
   status: 'ativo' | 'trial' | 'expirado'
   conta_teste?: boolean
+  whatsapp_admin_em?: string | null
 }
 
 interface UserCardProps {
@@ -49,6 +50,11 @@ export function UserCard({ user, onMenuOpen }: UserCardProps) {
           )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          {user.whatsapp_admin_em && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-600">
+              WPP ✓
+            </span>
+          )}
           {user.conta_teste && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-gray-100 text-gray-500">
               Teste

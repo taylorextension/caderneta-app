@@ -131,6 +131,24 @@ export default function AdminPage() {
     }
   }
 
+  async function handleWhatsAppSent() {
+    if (!selectedUser) return
+    try {
+      await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: selectedUser.id,
+          updates: { whatsapp_admin_em: new Date().toISOString() },
+        }),
+      })
+      await fetchData()
+      addToast({ message: 'WhatsApp marcado como enviado', type: 'success' })
+    } catch {
+      addToast({ message: 'Erro ao registrar envio', type: 'error' })
+    }
+  }
+
   async function handleCancelSubscription() {
     if (!selectedUser) return
     try {
@@ -321,6 +339,7 @@ export default function AdminPage() {
           setShowActions(false)
           setShowActivity(true)
         }}
+        onWhatsAppSent={handleWhatsAppSent}
       />
 
       <UserEditSheet

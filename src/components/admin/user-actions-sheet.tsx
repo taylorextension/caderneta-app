@@ -9,8 +9,10 @@ import {
   PencilSquareIcon,
   EyeIcon,
   BeakerIcon,
+  ChatBubbleLeftIcon,
 } from '@heroicons/react/24/outline'
 import type { User } from './user-card'
+import { openWhatsApp } from '@/lib/whatsapp'
 
 interface UserActionsSheetProps {
   open: boolean
@@ -22,6 +24,7 @@ interface UserActionsSheetProps {
   onDelete: () => void
   onEdit: () => void
   onViewActivity: () => void
+  onWhatsAppSent: () => void
 }
 
 export function UserActionsSheet({
@@ -34,10 +37,26 @@ export function UserActionsSheet({
   onDelete,
   onEdit,
   onViewActivity,
+  onWhatsAppSent,
 }: UserActionsSheetProps) {
   if (!user) return null
 
+  const adminWhatsAppMessage = `Oi, ${user.nome || 'tudo bem'}! 👋 Aqui é o Junio do Caderneta.\nSeu acesso já está ativo. 🎉\nAcesse agora: https://caderneta.app/inicio\nQualquer dúvida, pode me chamar aqui mesmo!`
+
   const actions = [
+    ...(user.telefone
+      ? [
+          {
+            label: user.whatsapp_admin_em ? 'Reenviar WhatsApp' : 'Enviar WhatsApp',
+            icon: <ChatBubbleLeftIcon className="h-5 w-5" />,
+            onClick: () => {
+              openWhatsApp(user.telefone, adminWhatsAppMessage)
+              onWhatsAppSent()
+            },
+            color: 'text-emerald-600',
+          },
+        ]
+      : []),
     {
       label: user.assinatura_ativa ? 'Desativar Conta' : 'Ativar Conta',
       icon: user.assinatura_ativa ? (
