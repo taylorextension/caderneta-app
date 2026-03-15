@@ -56,19 +56,19 @@ export async function POST(request: NextRequest) {
               <tr><td style="padding-bottom:28px;"><div style="height:1px;background-color:#E2E4E2;"></div></td></tr>
               <tr><td style="padding-bottom:20px;">
                 <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-                  <td style="width:32px;vertical-align:top;padding-top:1px;"><div style="width:24px;height:24px;background-color:#9FE870;border-radius:50%;text-align:center;line-height:24px;"><!--[if !mso]>--><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#163300" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M20 6 9 17l-5-5"/></svg><!--<![endif]--></div></td>
+                  <td style="width:32px;vertical-align:top;padding-top:1px;"><div style="width:24px;height:24px;background-color:#9FE870;border-radius:50%;text-align:center;line-height:24px;"><span style="font-size:14px;font-weight:700;color:#163300;line-height:24px;">&#10003;</span></div></td>
                   <td style="padding-left:12px;"><p style="margin:0;font-size:14px;font-weight:600;color:#0E0F0C;">Registre vendas fiado direto no celular</p><p style="margin:4px 0 0;font-size:13px;color:#6A6C6A;line-height:1.4;">Anote tudo com poucos toques e tenha controle total</p></td>
                 </tr></table>
               </td></tr>
               <tr><td style="padding-bottom:20px;">
                 <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-                  <td style="width:32px;vertical-align:top;padding-top:1px;"><div style="width:24px;height:24px;background-color:#9FE870;border-radius:50%;text-align:center;line-height:24px;"><!--[if !mso]>--><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#163300" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M20 6 9 17l-5-5"/></svg><!--<![endif]--></div></td>
+                  <td style="width:32px;vertical-align:top;padding-top:1px;"><div style="width:24px;height:24px;background-color:#9FE870;border-radius:50%;text-align:center;line-height:24px;"><span style="font-size:14px;font-weight:700;color:#163300;line-height:24px;">&#10003;</span></div></td>
                   <td style="padding-left:12px;"><p style="margin:0;font-size:14px;font-weight:600;color:#0E0F0C;">Cobre pelo WhatsApp com mensagens da IA</p><p style="margin:4px 0 0;font-size:13px;color:#6A6C6A;line-height:1.4;">Mensagens personalizadas geradas automaticamente</p></td>
                 </tr></table>
               </td></tr>
               <tr><td style="padding-bottom:36px;">
                 <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-                  <td style="width:32px;vertical-align:top;padding-top:1px;"><div style="width:24px;height:24px;background-color:#9FE870;border-radius:50%;text-align:center;line-height:24px;"><!--[if !mso]>--><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#163300" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M20 6 9 17l-5-5"/></svg><!--<![endif]--></div></td>
+                  <td style="width:32px;vertical-align:top;padding-top:1px;"><div style="width:24px;height:24px;background-color:#9FE870;border-radius:50%;text-align:center;line-height:24px;"><span style="font-size:14px;font-weight:700;color:#163300;line-height:24px;">&#10003;</span></div></td>
                   <td style="padding-left:12px;"><p style="margin:0;font-size:14px;font-weight:600;color:#0E0F0C;">Receba via Pix com link automático</p><p style="margin:4px 0 0;font-size:13px;color:#6A6C6A;line-height:1.4;">Link de pagamento gerado pra cada nota</p></td>
                 </tr></table>
               </td></tr>
