@@ -9,8 +9,10 @@ export interface Profile {
   pix_cidade: string
   trial_fim: string | null
   assinatura_ativa: boolean
-  plano?: string
-  onboarding_completo?: boolean
+  plano: string
+  onboarding_completo: boolean
+  conta_teste: boolean
+  whatsapp_admin_em: string | null
   created_at: string
   updated_at?: string
 }
@@ -64,6 +66,7 @@ export type EventoTipo =
   | 'tempo_pagina'
   | 'marcou_pago'
   | 'desfez_pago'
+  | 'lembrete_enviado'
 
 export interface Evento {
   id: string
