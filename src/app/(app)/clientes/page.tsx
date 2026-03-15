@@ -213,37 +213,46 @@ export default function ClientesPage() {
                     whileTap={{ scale: 0.98 }}
                     className="w-full py-1 text-left"
                   >
-                    <div className="flex items-center gap-2">
-                      {/* Dot de status */}
-                      <span
-                        className={cn(
-                          'h-2 w-2 rounded-full shrink-0',
-                          getStatusDot(c)
-                        )}
-                      />
-
-                      {/* Avatar */}
-                      <div className="h-9 w-9 rounded-full bg-[#163300] text-white flex items-center justify-center text-xs font-semibold shrink-0">
-                        {(c.nome?.[0] || 'C').toUpperCase()}
+                    <div className="flex items-center gap-3">
+                      {/* Avatar com dot */}
+                      <div className="relative shrink-0">
+                        <div className="h-10 w-10 rounded-full bg-[#163300] text-white flex items-center justify-center text-sm font-semibold">
+                          {(c.nome?.[0] || 'C').toUpperCase()}
+                        </div>
+                        <span
+                          className={cn(
+                            'absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white',
+                            getStatusDot(c)
+                          )}
+                        />
                       </div>
 
-                      {/* Nome e info */}
+                      {/* Nome e valor */}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-[#02090A] truncate">
                           {c.nome}
                         </p>
-                        <p className="text-sm text-[#6B7280]">
-                          {formatCurrencyShort(c.total_pendente)} ·{' '}
-                          {c.notas_pendentes} nota
-                          {c.notas_pendentes > 1 ? 's' : ''}
+                        <p className="text-xs text-[#6B7280]">
+                          {formatCurrencyShort(c.total_pendente)} · {c.notas_pendentes} nota{c.notas_pendentes !== 1 ? 's' : ''}
                         </p>
                       </div>
-                    </div>
 
-                    {/* Subtexto contextual */}
-                    <p className={cn('text-xs mt-1 pl-11', status.className)}>
-                      {status.text}
-                    </p>
+                      {/* Badge de status */}
+                      <span
+                        className={cn(
+                          'shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full',
+                          c.dias_atraso_max && c.dias_atraso_max > 0
+                            ? 'bg-red-50 text-red-600'
+                            : c.dias_para_vencer !== null
+                              ? 'bg-amber-50 text-amber-600'
+                              : c.total_pendente > 0
+                                ? 'bg-amber-50 text-amber-600'
+                                : 'bg-emerald-50 text-emerald-600'
+                        )}
+                      >
+                        {status.text}
+                      </span>
+                    </div>
                   </motion.button>
                 </Card>
               )

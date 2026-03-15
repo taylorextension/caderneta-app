@@ -13,13 +13,12 @@ export async function GET(request: NextRequest) {
     const supabase = getAdmin()
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
-    const filter = searchParams.get('filter') || 'all' // all, active, trial, expired, canceled
+    const filter = searchParams.get('filter') || 'all'
 
-    // Fetch all profiles with auth user emails
     const { data: profiles, error } = await supabase
       .from('profiles')
       .select(
-        'id, nome, nome_loja, telefone, plano, assinatura_ativa, trial_fim, created_at'
+        'id, nome, nome_loja, telefone, plano, assinatura_ativa, trial_fim, created_at, conta_teste'
       )
       .order('created_at', { ascending: false })
 
@@ -41,6 +40,7 @@ export async function GET(request: NextRequest) {
     let users = (profiles || []).map((p) => ({
       ...p,
       email: emailMap.get(p.id) || '',
+      conta_teste: p.conta_teste ?? false,
       status: p.assinatura_ativa
         ? 'ativo'
         : p.trial_fim && new Date(p.trial_fim) >= now
@@ -91,6 +91,10 @@ export async function PATCH(request: NextRequest) {
       allowed.assinatura_ativa = updates.assinatura_ativa
     if ('plano' in updates) allowed.plano = updates.plano
     if ('trial_fim' in updates) allowed.trial_fim = updates.trial_fim
+    if ('nome' in updates) allowed.nome = updates.nome
+    if ('nome_loja' in updates) allowed.nome_loja = updates.nome_loja
+    if ('telefone' in updates) allowed.telefone = updates.telefone
+    if ('conta_teste' in updates) allowed.conta_teste = updates.conta_teste
     allowed.updated_at = new Date().toISOString()
 
     const { error } = await supabase
@@ -104,5 +108,36 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error('Admin user update error:', error)
     return NextResponse.json({ error: 'Erro ao atualizar' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = getAdmin()
+    const { userId } = await request.json()
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'userId obrigatório' },
+        { status: 400 }
+      )
+    }
+
+    // Cascade delete: child tables first
+    await supabase.from('eventos').delete().eq('user_id', userId)
+    await supabase.from('cobrancas').delete().eq('user_id', userId)
+    await supabase.from('notas').delete().eq('user_id', userId)
+    await supabase.from('clientes').delete().eq('user_id', userId)
+    await supabase.from('subscription_events').delete().eq('user_id', userId)
+    await supabase.from('profiles').delete().eq('id', userId)
+
+    // Delete auth user
+    const { error: authError } = await supabase.auth.admin.deleteUser(userId)
+    if (authError) console.error('Error deleting auth user:', authError)
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Admin user delete error:', error)
+    return NextResponse.json({ error: 'Erro ao deletar' }, { status: 500 })
   }
 }

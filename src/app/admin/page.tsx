@@ -13,6 +13,14 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
 } from '@heroicons/react/24/outline'
+import { useUIStore } from '@/stores/ui-store'
+import { StatCard } from '@/components/admin/stat-card'
+import { BusinessMetrics } from '@/components/admin/business-metrics'
+import { UserCard, type User } from '@/components/admin/user-card'
+import { UserActionsSheet } from '@/components/admin/user-actions-sheet'
+import { UserEditSheet } from '@/components/admin/user-edit-sheet'
+import { UserDeleteModal } from '@/components/admin/user-delete-modal'
+import { UserActivitySheet } from '@/components/admin/user-activity-sheet'
 
 interface Stats {
   totalUsers: number
@@ -23,31 +31,28 @@ interface Stats {
   newLast30Days: number
   canceledLast30: number
   purchasesLast30: number
-}
-
-interface User {
-  id: string
-  nome: string
-  nome_loja: string
-  telefone: string
-  email: string
-  plano: string
-  assinatura_ativa: boolean
-  trial_fim: string | null
-  created_at: string
-  status: 'ativo' | 'trial' | 'expirado'
+  conversionRate: number
+  churnRate: number
+  mrr: number
 }
 
 type Filter = 'all' | 'active' | 'trial' | 'expired'
 
 export default function AdminPage() {
   const router = useRouter()
+  const addToast = useUIStore((s) => s.addToast)
   const [stats, setStats] = useState<Stats | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
-  const [updating, setUpdating] = useState<string | null>(null)
+
+  // Sheet/modal state
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [showActions, setShowActions] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
+  const [showDelete, setShowDelete] = useState(false)
+  const [showActivity, setShowActivity] = useState(false)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -73,15 +78,20 @@ export default function AdminPage() {
     fetchData()
   }, [fetchData])
 
-  async function toggleSubscription(user: User) {
-    setUpdating(user.id)
+  function handleMenuOpen(user: User) {
+    setSelectedUser(user)
+    setShowActions(true)
+  }
+
+  async function handleToggleSubscription() {
+    if (!selectedUser) return
     try {
-      const newStatus = !user.assinatura_ativa
+      const newStatus = !selectedUser.assinatura_ativa
       await fetch('/api/admin/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user.id,
+          userId: selectedUser.id,
           updates: {
             assinatura_ativa: newStatus,
             plano: newStatus ? 'basico' : 'trial',
@@ -89,21 +99,54 @@ export default function AdminPage() {
         }),
       })
       await fetchData()
-    } finally {
-      setUpdating(null)
+      addToast({
+        message: newStatus ? 'Conta ativada' : 'Conta desativada',
+        type: 'success',
+      })
+    } catch {
+      addToast({ message: 'Erro ao atualizar', type: 'error' })
     }
   }
 
-  const statusColor = (s: string) => {
-    if (s === 'ativo') return 'bg-emerald-100 text-emerald-700'
-    if (s === 'trial') return 'bg-amber-100 text-amber-700'
-    return 'bg-red-100 text-red-700'
+  async function handleToggleTest() {
+    if (!selectedUser) return
+    try {
+      const newValue = !selectedUser.conta_teste
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: selectedUser.id,
+          updates: { conta_teste: newValue },
+        }),
+      })
+      if (!res.ok) throw new Error('Falha ao atualizar')
+      await fetchData()
+      addToast({
+        message: newValue ? 'Marcado como teste' : 'Marca de teste removida',
+        type: 'success',
+      })
+    } catch {
+      addToast({ message: 'Erro ao atualizar', type: 'error' })
+    }
   }
 
-  const statusLabel = (s: string) => {
-    if (s === 'ativo') return 'Assinante'
-    if (s === 'trial') return 'Trial'
-    return 'Expirado'
+  async function handleCancelSubscription() {
+    if (!selectedUser) return
+    try {
+      await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: selectedUser.id,
+          updates: { assinatura_ativa: false, plano: 'trial' },
+        }),
+      })
+      await fetchData()
+      addToast({ message: 'Assinatura cancelada', type: 'success' })
+    } catch {
+      addToast({ message: 'Erro ao cancelar', type: 'error' })
+    }
   }
 
   const filters: { key: Filter; label: string }[] = [
@@ -140,50 +183,59 @@ export default function AdminPage() {
       <div className="px-4 py-5 max-w-2xl mx-auto space-y-5">
         {/* Stats Grid */}
         {stats && (
-          <div className="grid grid-cols-2 gap-3">
-            <StatCard
-              icon={<UserGroupIcon className="h-5 w-5" />}
-              label="Total de Usuários"
-              value={stats.totalUsers}
-              sub={`+${stats.newToday} hoje`}
-              color="bg-blue-50 text-blue-600"
-            />
-            <StatCard
-              icon={<CheckBadgeIcon className="h-5 w-5" />}
-              label="Assinantes Ativos"
-              value={stats.activeSubscribers}
-              sub={`${stats.purchasesLast30} novos/30d`}
-              color="bg-emerald-50 text-emerald-600"
-            />
-            <StatCard
-              icon={<ClockIcon className="h-5 w-5" />}
-              label="Em Trial"
-              value={stats.trialActive}
-              color="bg-amber-50 text-amber-600"
-            />
-            <StatCard
-              icon={<XCircleIcon className="h-5 w-5" />}
-              label="Trial Expirado"
-              value={stats.trialExpired}
-              sub={`${stats.canceledLast30} cancel/30d`}
-              color="bg-red-50 text-red-600"
-            />
-            <div className="col-span-2 grid grid-cols-2 gap-3">
+          <>
+            <div className="grid grid-cols-2 gap-3">
               <StatCard
-                icon={<ArrowTrendingUpIcon className="h-5 w-5" />}
-                label="Novos (30 dias)"
-                value={stats.newLast30Days}
-                color="bg-purple-50 text-purple-600"
+                icon={<UserGroupIcon className="h-5 w-5" />}
+                label="Total de Usuários"
+                value={stats.totalUsers}
+                sub={`+${stats.newToday} hoje`}
+                color="bg-blue-50 text-blue-600"
               />
               <StatCard
-                icon={<ArrowTrendingDownIcon className="h-5 w-5" />}
-                label="Cancelamentos"
-                value={stats.canceledLast30}
-                sub="últimos 30 dias"
-                color="bg-rose-50 text-rose-600"
+                icon={<CheckBadgeIcon className="h-5 w-5" />}
+                label="Assinantes Ativos"
+                value={stats.activeSubscribers}
+                sub={`${stats.purchasesLast30} novos/30d`}
+                color="bg-emerald-50 text-emerald-600"
               />
+              <StatCard
+                icon={<ClockIcon className="h-5 w-5" />}
+                label="Em Trial"
+                value={stats.trialActive}
+                color="bg-amber-50 text-amber-600"
+              />
+              <StatCard
+                icon={<XCircleIcon className="h-5 w-5" />}
+                label="Trial Expirado"
+                value={stats.trialExpired}
+                sub={`${stats.canceledLast30} cancel/30d`}
+                color="bg-red-50 text-red-600"
+              />
+              <div className="col-span-2 grid grid-cols-2 gap-3">
+                <StatCard
+                  icon={<ArrowTrendingUpIcon className="h-5 w-5" />}
+                  label="Novos (30 dias)"
+                  value={stats.newLast30Days}
+                  color="bg-purple-50 text-purple-600"
+                />
+                <StatCard
+                  icon={<ArrowTrendingDownIcon className="h-5 w-5" />}
+                  label="Cancelamentos"
+                  value={stats.canceledLast30}
+                  sub="últimos 30 dias"
+                  color="bg-rose-50 text-rose-600"
+                />
+              </div>
             </div>
-          </div>
+
+            {/* Business Metrics */}
+            <BusinessMetrics
+              conversionRate={stats.conversionRate}
+              churnRate={stats.churnRate}
+              mrr={stats.mrr}
+            />
+          </>
         )}
 
         {/* Search + Filters */}
@@ -239,95 +291,59 @@ export default function AdminPage() {
             </div>
           ) : (
             users.map((user) => (
-              <div key={user.id} className="bg-white rounded-xl p-4 space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[#02090A] truncate">
-                      {user.nome || 'Sem nome'}
-                    </p>
-                    <p className="text-xs text-[#6B7280] truncate">
-                      {user.email}
-                    </p>
-                    {user.nome_loja && (
-                      <p className="text-xs text-[#6B7280] truncate">
-                        {user.nome_loja}
-                      </p>
-                    )}
-                  </div>
-                  <span
-                    className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${statusColor(user.status)}`}
-                  >
-                    {statusLabel(user.status)}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-[#6B7280]">
-                  <div className="flex gap-3">
-                    <span>
-                      Plano:{' '}
-                      <strong className="text-[#02090A]">
-                        {user.plano || 'trial'}
-                      </strong>
-                    </span>
-                    <span>
-                      Criado:{' '}
-                      {new Date(user.created_at).toLocaleDateString('pt-BR')}
-                    </span>
-                  </div>
-                </div>
-
-                {user.trial_fim && !user.assinatura_ativa && (
-                  <p className="text-[11px] text-[#6B7280]">
-                    Trial até:{' '}
-                    {new Date(user.trial_fim).toLocaleDateString('pt-BR')}
-                  </p>
-                )}
-
-                <div className="flex gap-2 pt-1">
-                  <button
-                    onClick={() => toggleSubscription(user)}
-                    disabled={updating === user.id}
-                    className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                      user.assinatura_ativa
-                        ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                        : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                    } disabled:opacity-50`}
-                  >
-                    {updating === user.id
-                      ? '...'
-                      : user.assinatura_ativa
-                        ? 'Cancelar Assinatura'
-                        : 'Ativar Assinatura'}
-                  </button>
-                </div>
-              </div>
+              <UserCard
+                key={user.id}
+                user={user}
+                onMenuOpen={handleMenuOpen}
+              />
             ))
           )}
         </div>
       </div>
-    </div>
-  )
-}
 
-function StatCard({
-  icon,
-  label,
-  value,
-  sub,
-  color,
-}: {
-  icon: React.ReactNode
-  label: string
-  value: number
-  sub?: string
-  color: string
-}) {
-  return (
-    <div className="bg-white rounded-xl p-4">
-      <div className={`inline-flex p-2 rounded-lg mb-2 ${color}`}>{icon}</div>
-      <p className="text-2xl font-bold text-[#02090A]">{value}</p>
-      <p className="text-xs text-[#6B7280] mt-0.5">{label}</p>
-      {sub && <p className="text-[10px] text-[#9CA3AF] mt-0.5">{sub}</p>}
+      {/* Overlays */}
+      <UserActionsSheet
+        open={showActions}
+        onClose={() => setShowActions(false)}
+        user={selectedUser}
+        onToggleSubscription={handleToggleSubscription}
+        onCancelSubscription={handleCancelSubscription}
+        onToggleTest={handleToggleTest}
+        onDelete={() => {
+          setShowActions(false)
+          setShowDelete(true)
+        }}
+        onEdit={() => {
+          setShowActions(false)
+          setShowEdit(true)
+        }}
+        onViewActivity={() => {
+          setShowActions(false)
+          setShowActivity(true)
+        }}
+      />
+
+      <UserEditSheet
+        open={showEdit}
+        onClose={() => setShowEdit(false)}
+        user={selectedUser}
+        onSaved={fetchData}
+      />
+
+      <UserDeleteModal
+        open={showDelete}
+        onClose={() => setShowDelete(false)}
+        userId={selectedUser?.id || null}
+        userName={selectedUser?.nome || ''}
+        onDeleted={fetchData}
+      />
+
+      <UserActivitySheet
+        open={showActivity}
+        onClose={() => setShowActivity(false)}
+        userId={selectedUser?.id || null}
+        userName={selectedUser?.nome || ''}
+      />
     </div>
   )
 }

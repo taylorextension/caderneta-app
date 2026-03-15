@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
@@ -22,30 +22,32 @@ interface TutorialOverlayProps {
 export function TutorialOverlay({ steps }: TutorialOverlayProps) {
   const { isActive, currentStep, nextStep, dismiss, complete } = useTutorialStore()
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null)
-  const [mounted, setMounted] = useState(false)
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
+  const updateTargetRect = useCallback(() => {
     if (!isActive || currentStep >= steps.length) {
       setTargetRect(null)
       return
     }
+    const step = steps[currentStep]
+    const el = document.getElementById(step.targetId)
+    setTargetRect(el ? el.getBoundingClientRect() : null)
+  }, [isActive, currentStep, steps])
+
+  useEffect(() => {
+    if (!isActive || currentStep >= steps.length) return
 
     const step = steps[currentStep]
     const checkElement = () => {
       const el = document.getElementById(step.targetId)
-      if (el) {
-        setTargetRect(el.getBoundingClientRect())
-      } else {
-        setTargetRect(null)
-      }
+      setTargetRect(el ? el.getBoundingClientRect() : null)
     }
 
-    // Check immediately and then poll every 500ms (handles modals/animations)
-    checkElement()
+    // Poll every 500ms and listen for scroll/resize
     const interval = setInterval(checkElement, 500)
     window.addEventListener('scroll', checkElement, true)
     window.addEventListener('resize', checkElement)
@@ -55,7 +57,7 @@ export function TutorialOverlay({ steps }: TutorialOverlayProps) {
       window.removeEventListener('scroll', checkElement, true)
       window.removeEventListener('resize', checkElement)
     }
-  }, [isActive, currentStep, steps])
+  }, [isActive, currentStep, steps, updateTargetRect])
 
   // If tutorial is finished or disabled, render nothing
   if (!mounted || !isActive || currentStep >= steps.length) return null

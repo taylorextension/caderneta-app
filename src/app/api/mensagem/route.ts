@@ -36,98 +36,47 @@ const mensagemRequestSchema = z.object({
 
 type MensagemInput = z.infer<typeof mensagemRequestSchema>
 
+// Detecta preposição correta para o nome do comércio (da/do)
+function getRefLoja(nomeLoja: string): string {
+  if (!nomeLoja) return ''
+  const primeira = nomeLoja.split(' ')[0]?.toLowerCase() || ''
+  const femininos = [
+    'padaria', 'mercearia', 'loja', 'casa', 'distribuidora', 'doceria',
+    'confeitaria', 'papelaria', 'farmácia', 'farmacia', 'quitanda',
+    'barraca', 'feira', 'cantina', 'lanchonete', 'pizzaria', 'sorveteria',
+    'tabacaria', 'drogaria', 'ótica', 'otica', 'floricultura', 'academia',
+    'barbearia', 'oficina', 'borracharia',
+  ]
+  const masculinos = [
+    'mercado', 'mercadinho', 'bar', 'super', 'supermercado', 'armazem',
+    'armazém', 'atacado', 'atacadão', 'atacadao', 'empório', 'emporio',
+    'restaurante', 'boteco', 'petshop', 'pet', 'açougue', 'acougue',
+    'posto', 'salão', 'salao', 'estúdio', 'estudio', 'depósito', 'deposito',
+  ]
+  if (femininos.includes(primeira)) return `da ${nomeLoja}`
+  if (masculinos.includes(primeira)) return `do ${nomeLoja}`
+  if (/(?:ia|ria|ca|da|ça|sa)$/.test(primeira)) return `da ${nomeLoja}`
+  return `do ${nomeLoja}`
+}
+
+// Determina o nível de urgência baseado em dias vencidos + vezes cobrado
+function getUrgencyLevel(diasVencidos: number, vezesCobrado: number): 'leve' | 'moderado' | 'firme' | 'direto' {
+  if (vezesCobrado >= 3 || diasVencidos > 60) return 'direto'
+  if (vezesCobrado >= 2 || diasVencidos > 30) return 'firme'
+  if (diasVencidos > 7 || vezesCobrado >= 1) return 'moderado'
+  return 'leve'
+}
+
 function buildPrompt(data: MensagemInput): string {
   if (!data.notas || data.notas.length === 0) {
     return 'Oi! Passando pra lembrar da continha. Dá pra acertar pelo Pix? Obrigado!'
   }
 
-  // Sempre usa o NOME, não apelido
   const primeiroNome = (data.cliente_nome || 'Cliente').split(' ')[0]
   const nomeLoja = data.nome_loja || ''
   const nomeLojista = data.lojista_nome?.split(' ')[0] || ''
-  const totalFormatado = Number(data.total || 0)
-    .toFixed(2)
-    .replace('.', ',')
-
-  // Detecta preposição correta para o nome do comércio
-  const primeiraParaLoja = nomeLoja.split(' ')[0]?.toLowerCase() || ''
-  const femininos = [
-    'padaria',
-    'mercearia',
-    'loja',
-    'casa',
-    'distribuidora',
-    'doceria',
-    'confeitaria',
-    'papelaria',
-    'farmácia',
-    'farmacia',
-    'quitanda',
-    'barraca',
-    'feira',
-    'cantina',
-    'lanchonete',
-    'pizzaria',
-    'sorveteria',
-    'tabacaria',
-    'drogaria',
-    'ótica',
-    'otica',
-    'floricultura',
-    'academia',
-    'barbearia',
-    'oficina',
-    'borracharia',
-  ]
-  const masculinos = [
-    'mercado',
-    'mercadinho',
-    'bar',
-    'super',
-    'supermercado',
-    'armazem',
-    'armazém',
-    'atacado',
-    'atacadão',
-    'atacadao',
-    'empório',
-    'emporio',
-    'restaurante',
-    'boteco',
-    'petshop',
-    'pet',
-    'açougue',
-    'acougue',
-    'posto',
-    'salão',
-    'salao',
-    'estúdio',
-    'estudio',
-    'depósito',
-    'deposito',
-  ]
-  let refLoja = ''
-  if (nomeLoja) {
-    if (femininos.includes(primeiraParaLoja)) {
-      refLoja = `da ${nomeLoja}`
-    } else if (masculinos.includes(primeiraParaLoja)) {
-      refLoja = `do ${nomeLoja}`
-    } else {
-      // Tenta inferir pelo final da primeira palavra
-      if (
-        primeiraParaLoja.endsWith('ia') ||
-        primeiraParaLoja.endsWith('ria') ||
-        primeiraParaLoja.endsWith('ca') ||
-        primeiraParaLoja.endsWith('da') ||
-        primeiraParaLoja.endsWith('ça') ||
-        primeiraParaLoja.endsWith('sa')
-      ) {
-        refLoja = `da ${nomeLoja}`
-      } else {
-        refLoja = `do ${nomeLoja}`
-      }
-    }
-  }
+  const totalFormatado = Number(data.total || 0).toFixed(2).replace('.', ',')
+  const refLoja = getRefLoja(nomeLoja)
 
   // Calcula dias vencidos da nota mais antiga
   const diasVencidos = data.notas
@@ -139,11 +88,10 @@ function buildPrompt(data: MensagemInput): string {
     .filter((d) => d > 0)
   const maiorAtraso = diasVencidos.length > 0 ? Math.max(...diasVencidos) : 0
 
-  // Contexto de vencimento para o prompt
-  let ctxVencimento = ''
-  if (maiorAtraso > 0) {
-    ctxVencimento = `\nDias desde o vencimento: ${maiorAtraso} dias`
-  }
+  // Maior número de cobranças entre as notas
+  const maiorVezesCobrado = Math.max(...data.notas.map((n) => n.vezes_cobrado || 0), 0)
+
+  const nivel = getUrgencyLevel(maiorAtraso, maiorVezesCobrado)
 
   // Monta lista de itens compacta
   const itensResumo = data.notas
@@ -154,64 +102,57 @@ function buildPrompt(data: MensagemInput): string {
     )
     .join(', ')
 
-  // Exemplos adaptados ao cenário (com ou sem vencimento)
-  let exemploComVencimento = ''
-  if (maiorAtraso > 0) {
-    exemploComVencimento = `
-3)
-${primeiroNome}, tudo certo?
-
-Aquela continha de *R$${totalFormatado}*${refLoja ? ` aqui ${refLoja}` : ''} já tem ${maiorAtraso} dias.
-
-Quando der, manda um Pix pra gente acertar! 🙏`
-  } else {
-    exemploComVencimento = `
-3)
-${primeiroNome}, beleza?
-
-Aquela continha de *R$${totalFormatado}* tá aberta ainda.
-
-Me manda um Pix quando puder!${nomeLojista ? ` ${nomeLojista}` : ''} 🙏`
+  // Tom e instruções variam por nível
+  const tomPorNivel = {
+    leve: 'Lembrete leve e descontraído, como quem puxa assunto. Sem pressa.',
+    moderado: 'Lembrete gentil mas claro. O cliente já sabe da conta — seja objetivo sem ser frio.',
+    firme: 'Tom ainda educado, mas mais direto. Deixe claro que é importante acertar logo. Pode mencionar que já lembrou antes.',
+    direto: 'Tom sério e respeitoso, sem rodeios. Transmita que precisa resolver. Pode dizer "preciso" ou "importante". Ainda sem ser agressivo.',
   }
 
-  return `Você gera mensagens curtas de cobrança para WhatsApp de pequenos comércios brasileiros.
+  // Variação de abertura para evitar repetição
+  const seed = Math.floor(Math.random() * 5)
+  const aberturas = [
+    `cumprimento casual (ex: "E aí", "Opa", "Fala")`,
+    `pergunta sobre o dia (ex: "Tudo certo?", "Como tá?")`,
+    `direto ao ponto sem saudação longa`,
+    `referência ao tempo/dia (ex: "Boa tarde", "Bom dia")`,
+    `tom de quem acabou de lembrar (ex: "Ah, ia esquecendo...")`,
+  ]
 
-TAREFA: Gere UMA mensagem para lembrar ${primeiroNome} da continha de *R$${totalFormatado}*${refLoja ? ` ${refLoja}` : ''}.
-${itensResumo ? `Itens: ${itensResumo}` : ''}${ctxVencimento}
+  return `Você é o assistente de um pequeno comércio de bairro brasileiro. Gere UMA mensagem curta de WhatsApp para lembrar um cliente da continha aberta. O lojista e o cliente se conhecem pessoalmente — são vizinhos de bairro.
 
-FORMATAÇÃO WHATSAPP:
-- Negrito = UM asterisco: *texto* (nunca **texto**)
+<dados>
+Cliente: ${primeiroNome}
+Valor: R$ ${totalFormatado}
+${refLoja ? `Loja: ${refLoja}\n` : ''}${nomeLojista ? `Lojista: ${nomeLojista}\n` : ''}${itensResumo ? `Itens: ${itensResumo}\n` : ''}${maiorAtraso > 0 ? `Dias desde vencimento: ${maiorAtraso}\n` : ''}${maiorVezesCobrado > 0 ? `Vezes já lembrado: ${maiorVezesCobrado}\n` : ''}</dados>
+
+<tom>
+Nível: ${nivel.toUpperCase()}
+${tomPorNivel[nivel]}
+</tom>
+
+<formato>
+- WhatsApp: negrito com UM asterisco (*valor*). NUNCA use dois asteriscos (**texto**).
+  CERTO: *R$ ${totalFormatado}*
+  ERRADO: **R$ ${totalFormatado}**
 - Máximo 2 emojis
-- Separe a saudação, o corpo e a despedida com linhas em branco (dupla quebra de linha)
-- Isso deixa a mensagem arejada e fácil de ler no celular
+- Separe saudação, corpo e despedida com uma linha em branco entre cada
+- Máximo 4 linhas de conteúdo (sem contar linhas em branco)
+- A ÚLTIMA linha da mensagem DEVE ser uma frase curta convidando a usar o link de pagamento Pix que será colado logo abaixo. Exemplos de última linha:
+  "Segue o link pra acertar pelo Pix 👇"
+  "Tem um link aqui pra facilitar o Pix:"
+  "Deixei o link do Pix aqui embaixo 👇"
+  "Pra acertar é só clicar aqui embaixo:"
+  NÃO invente um link. Apenas mencione que tem um link logo abaixo.
+</formato>
 
-REGRAS:
-- Tom: amigável e leve, como falar com vizinho
-- Mencione Pix como pagamento
-${maiorAtraso > 0 ? `- Mencione naturalmente que a continha já tem ${maiorAtraso} dias (sem usar a palavra "atraso")` : ''}
-- NUNCA use: dívida, débito, inadimplente, pendência, atraso, cobrança, parcelamento, parcela
-- USE: continha, comprinha, acertar, lembrar
-- NÃO inclua link (é adicionado depois)
-- Responda SÓ a mensagem, nada mais
-
-EXEMPLOS:
-1)
-Oi ${primeiroNome}! 😊
-
-Passando pra lembrar daquela continha de *R$${totalFormatado}*${refLoja ? ` aqui ${refLoja}` : ''}.
-
-Quando puder, manda por Pix!
-${nomeLojista ? `Abraço, ${nomeLojista}` : 'Valeu!'} 🙏
-
-2)
-E aí ${primeiroNome}, tudo bem?
-
-Só lembrando da comprinha de *R$${totalFormatado}*${refLoja ? ` aqui ${refLoja}` : ''}.
-
-Aceito Pix quando der pra você! 😊
-${exemploComVencimento}
-
-Gere uma mensagem DIFERENTE dos exemplos acima, variando estrutura e palavras. Mesma vibe, texto novo.
+<regras>
+${maiorAtraso > 0 ? `- Mencione naturalmente que a continha tem ${maiorAtraso} dias (sem usar a palavra "atraso" ou "atrasado")\n` : ''}- PROIBIDO: dívida, débito, inadimplente, pendência, atraso, atrasado, cobrança, parcelamento, parcela, devendo, "Clique aqui pra pagar", "clique aqui"
+- PERMITIDO: continha, comprinha, acertar, lembrar, resolver, valor
+- Comece com: ${aberturas[seed]}
+- Responda APENAS a mensagem pronta, sem explicações
+</regras>
 
 MENSAGEM:`
 }

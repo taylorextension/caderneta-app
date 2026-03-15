@@ -15,7 +15,7 @@ export async function GET() {
     // Get all profiles
     const { data: profiles, error } = await supabase
       .from('profiles')
-      .select('id, assinatura_ativa, plano, trial_fim, created_at')
+      .select('*')
 
     if (error) throw error
 
@@ -55,6 +55,24 @@ export async function GET() {
     const purchasesLast30 =
       events?.filter((e) => e.event === 'purchase_approved').length || 0
 
+    // Business metrics
+    const usersWithTrial = profiles?.filter((p) => p.trial_fim) || []
+    const convertedFromTrial = usersWithTrial.filter((p) => p.assinatura_ativa)
+    const conversionRate =
+      usersWithTrial.length > 0
+        ? Math.round((convertedFromTrial.length / usersWithTrial.length) * 100)
+        : 0
+
+    const beginningSubscribers = activeSubscribers + canceledLast30
+    const churnRate =
+      beginningSubscribers > 0
+        ? Math.round((canceledLast30 / beginningSubscribers) * 100)
+        : 0
+
+    const realSubscribers =
+      profiles?.filter((p) => p.assinatura_ativa && !p.conta_teste).length || 0
+    const mrr = realSubscribers * 29.9
+
     return NextResponse.json({
       totalUsers,
       activeSubscribers,
@@ -64,6 +82,9 @@ export async function GET() {
       newLast30Days,
       canceledLast30,
       purchasesLast30,
+      conversionRate,
+      churnRate,
+      mrr,
     })
   } catch (error) {
     console.error('Admin stats error:', error)

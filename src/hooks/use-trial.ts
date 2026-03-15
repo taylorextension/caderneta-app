@@ -1,26 +1,37 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import { useAuthStore } from '@/stores/auth-store'
 import { getTrialDaysRemaining } from '@/lib/subscription'
 
 const REFRESH_INTERVAL_MS = 60000
 
+let clientTimestamp = Date.now()
+
+function subscribe(cb: () => void) {
+  const id = window.setInterval(() => {
+    clientTimestamp = Date.now()
+    cb()
+  }, REFRESH_INTERVAL_MS)
+  return () => window.clearInterval(id)
+}
+
+function getSnapshot() {
+  return clientTimestamp
+}
+
+function getServerSnapshot() {
+  return 0
+}
+
 export function useTrial() {
   const profile = useAuthStore((s) => s.profile)
   const profileId = profile?.id
   const assinaturaAtiva = profile?.assinatura_ativa
-  const [now, setNow] = useState<number | null>(null)
+  const now = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    setNow(Date.now()) // Set immediately on client mount to bypass SSR warning
-    if (!profileId || assinaturaAtiva) return
-
-    const interval = window.setInterval(() => {
-      setNow(Date.now())
-    }, REFRESH_INTERVAL_MS)
-
-    return () => window.clearInterval(interval)
+    clientTimestamp = Date.now()
   }, [profileId, assinaturaAtiva])
 
   if (!profile) {
@@ -43,7 +54,7 @@ export function useTrial() {
     }
   }
 
-  const diasRestantes = now ? getTrialDaysRemaining(profile, now) : 7
+  const diasRestantes = now > 0 ? getTrialDaysRemaining(profile, now) : 7
   const trialAtivo = diasRestantes > 0
 
   return {

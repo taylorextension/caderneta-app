@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import { ToastContainer } from '@/components/ui/toast'
 import { MetaPixel } from '@/components/analytics/meta-pixel'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Suspense } from 'react'
 import './globals.css'
 
@@ -91,6 +92,7 @@ export default function RootLayout({
           <MetaPixel />
         </Suspense>
         {children}
+        <SpeedInsights />
         <ToastContainer />
       </body>
     </html>
