@@ -53,7 +53,7 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
 
   const total = notas.reduce((acc, n) => acc + Number(n.valor), 0)
   const cliente = notas[0]
-  const displayName = cliente?.apelido || cliente?.cliente_nome || ''
+  const displayName = (cliente?.apelido || cliente?.cliente_nome || '').trim()
   const initial = (displayName[0] || 'C').toUpperCase()
 
   const appUrl = typeof window !== 'undefined' ? window.location.origin : ''
@@ -70,8 +70,8 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cliente_nome: cliente.cliente_nome,
-          cliente_apelido: cliente.apelido,
+          cliente_nome: cliente.cliente_nome?.trim(),
+          cliente_apelido: cliente.apelido?.trim(),
           lojista_nome: profile.nome,
           nome_loja: profile.nome_loja,
           notas: notas.map((n) => ({

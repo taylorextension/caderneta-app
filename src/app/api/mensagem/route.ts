@@ -72,9 +72,9 @@ function buildPrompt(data: MensagemInput): string {
     return 'Oi! Passando pra lembrar da continha. Dá pra acertar pelo Pix? Obrigado!'
   }
 
-  const primeiroNome = (data.cliente_nome || 'Cliente').split(' ')[0]
-  const nomeLoja = data.nome_loja || ''
-  const nomeLojista = data.lojista_nome?.split(' ')[0] || ''
+  const primeiroNome = (data.cliente_nome || 'Cliente').trim().split(' ')[0]
+  const nomeLoja = (data.nome_loja || '').trim()
+  const nomeLojista = (data.lojista_nome || '').trim().split(' ')[0]
   const totalFormatado = Number(data.total || 0).toFixed(2).replace('.', ',')
   const refLoja = getRefLoja(nomeLoja)
 
