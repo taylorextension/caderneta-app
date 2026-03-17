@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { PageTransition } from '@/components/layout/page-transition'
 import { LogoAnimated } from '@/components/ui/logo-animated'
+import { InAppBrowserBanner } from '@/components/growth/in-app-browser-banner'
+import { identifyUser } from '@/lib/analytics'
 
 export default function CadastroPage() {
   const router = useRouter()
@@ -94,6 +96,7 @@ export default function CadastroPage() {
 
       fbq.event('CompleteRegistration')
       trackEvent('cadastro_submit')
+      identifyUser(data.user.id, { nome: form.nome, email: form.email, telefone: form.telefone })
 
       router.push('/setup')
     } catch (err) {
@@ -128,6 +131,8 @@ export default function CadastroPage() {
               Crie sua conta gratuitamente e comece a usar.
             </p>
           </div>
+
+          <InAppBrowserBanner />
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <Input

@@ -1,11 +1,10 @@
 import * as fbq from '@/lib/fpixel'
+import { captureEvent, identifyUser as phIdentify } from '@/lib/posthog'
 
 /**
  * Track a product analytics event.
  *
- * Currently fires via Facebook Pixel.
- * Can be extended to log to a Supabase analytics_events table
- * or any other provider (Mixpanel, Amplitude, PostHog, etc.).
+ * Dual-fires to Facebook Pixel + PostHog (when enabled).
  */
 export function trackEvent(
   name: string,
@@ -14,8 +13,19 @@ export function trackEvent(
   // Facebook Pixel
   fbq.event(name, properties)
 
+  // PostHog
+  captureEvent(name, properties)
+
   // Console in dev for debugging
   if (process.env.NODE_ENV === 'development') {
     console.log(`[analytics] ${name}`, properties || '')
   }
 }
+
+/**
+ * Identify a user after login/signup for PostHog.
+ */
+export function identifyUser(userId: string, properties?: Record<string, unknown>) {
+  phIdentify(userId, properties)
+}
+

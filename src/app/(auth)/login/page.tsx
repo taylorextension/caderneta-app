@@ -10,7 +10,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PageTransition } from '@/components/layout/page-transition'
 import { LogoAnimated } from '@/components/ui/logo-animated'
+import { InAppBrowserBanner } from '@/components/growth/in-app-browser-banner'
 import { isOnboardingComplete } from '@/lib/onboarding'
+import { identifyUser } from '@/lib/analytics'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -61,6 +63,8 @@ export default function LoginPage() {
       } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não encontrado')
 
+      identifyUser(user.id, { email: user.email })
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
@@ -108,6 +112,8 @@ export default function LoginPage() {
               priority
             />
           </div>
+
+          <InAppBrowserBanner />
 
           <form
             onSubmit={handleSubmit}

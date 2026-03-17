@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import { ToastContainer } from '@/components/ui/toast'
 import { MetaPixel } from '@/components/analytics/meta-pixel'
+import { PostHogInit } from '@/components/analytics/posthog-init'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Suspense } from 'react'
 import './globals.css'
@@ -90,6 +91,7 @@ export default function RootLayout({
       >
         <Suspense fallback={null}>
           <MetaPixel />
+          <PostHogInit />
         </Suspense>
         {children}
         <SpeedInsights />
