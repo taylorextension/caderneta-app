@@ -24,6 +24,7 @@ interface NotaPaga {
   cliente_id: string
   cliente_nome: string
   cliente_apelido: string | null
+  tipo: 'nota' | 'parcial'
 }
 
 interface NotaPagaRow {
@@ -33,6 +34,7 @@ interface NotaPagaRow {
   data_pagamento: string | null
   data_compra: string
   cliente_id: string
+  tipo: 'nota' | 'parcial'
 }
 
 interface ClienteResumo {
@@ -102,8 +104,34 @@ export default function HistoricoPage() {
 
       if (error) throw error
 
-      const notasRows = (notasData || []) as NotaPagaRow[]
-      const clienteIds = Array.from(new Set(notasRows.map((n) => n.cliente_id)))
+      const notasRows: NotaPagaRow[] = (notasData || []).map(n => ({
+        ...n,
+        tipo: 'nota' as const
+      }))
+
+      const { data: parciaisData } = await supabase
+        .from('eventos')
+        .select('id, cliente_id, created_at, metadata')
+        .eq('user_id', profile.id)
+        .eq('tipo', 'pagamento_parcial')
+
+      const parciaisRows: NotaPagaRow[] = (parciaisData || []).map((p) => ({
+        id: p.id,
+        valor: typeof p.metadata === 'object' && p.metadata ? Number((p.metadata as Record<string, unknown>).valor) || 0 : 0,
+        descricao: 'Pagamento parcial',
+        data_pagamento: p.created_at,
+        data_compra: p.created_at,
+        cliente_id: p.cliente_id,
+        tipo: 'parcial' as const
+      }))
+
+      const combinedRows = [...notasRows, ...parciaisRows].sort((a, b) => {
+        const dateA = new Date(a.data_pagamento || a.data_compra).getTime()
+        const dateB = new Date(b.data_pagamento || b.data_compra).getTime()
+        return dateB - dateA
+      })
+
+      const clienteIds = Array.from(new Set(combinedRows.map((n) => n.cliente_id)))
 
       const clientesMap = new Map<
         string,
@@ -132,6 +160,7 @@ export default function HistoricoPage() {
           cliente_id: n.cliente_id,
           cliente_nome: cliente?.nome || 'Cliente',
           cliente_apelido: cliente?.apelido || null,
+          tipo: n.tipo
         }
       })
 
@@ -152,10 +181,17 @@ export default function HistoricoPage() {
     try {
       setDeleting(true)
       const supabase = createClient()
-      await supabase.from('notas').delete().eq('id', deleteId)
+      const itemToDelete = notas.find(n => n.id === deleteId)
+      
+      if (itemToDelete?.tipo === 'parcial') {
+        await supabase.from('eventos').delete().eq('id', deleteId)
+      } else {
+        await supabase.from('notas').delete().eq('id', deleteId)
+      }
+
       setNotas((prev) => prev.filter((n) => n.id !== deleteId))
       setDeleteId(null)
-      addToast({ message: 'Nota excluída', type: 'info' })
+      addToast({ message: 'Registro excluído', type: 'info' })
     } catch {
       addToast({ message: 'Erro ao excluir', type: 'error' })
     } finally {
