@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 import { openWhatsApp } from '@/lib/whatsapp'
 import { formatCurrencyShort } from '@/lib/format'
 import { trackEvent } from '@/lib/analytics'
-import { ArrowPathIcon, PencilIcon, LinkIcon } from '@heroicons/react/24/outline'
+import { ArrowPathIcon, PencilIcon, LinkIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline'
 import type { NotaComCliente } from '@/types/database'
 
 interface CobrarSheetProps {
@@ -153,6 +153,16 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
     ? notas[0].dias_atraso
     : null
 
+  async function handleCopy() {
+    try {
+      const fullMessage = `${mensagem}\n\n${linkPix}`
+      await navigator.clipboard.writeText(fullMessage)
+      addToast({ message: 'Mensagem copiada com sucesso!', type: 'success' })
+    } catch {
+      addToast({ message: 'Erro ao copiar mensagem', type: 'error' })
+    }
+  }
+
   return (
     <BottomSheet open={open} onClose={onClose}>
       {/* Header */}
@@ -175,6 +185,14 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
             )}
           </div>
         </div>
+        <button
+          onClick={handleCopy}
+          title="Copiar mensagem completa"
+          className="shrink-0 px-3 py-1.5 rounded-full bg-[#163300]/5 text-xs font-semibold text-text-secondary hover:bg-[#163300]/10 transition-colors flex items-center gap-1.5 active:scale-95"
+        >
+          <DocumentDuplicateIcon className="h-3.5 w-3.5" />
+          Copiar
+        </button>
       </div>
 
       <div className="h-px bg-divider my-4" />
