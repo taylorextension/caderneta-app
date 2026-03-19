@@ -38,7 +38,7 @@ export async function GET(
     const { data, error } = await supabase
       .from('notas')
       .select(
-        'id, status, itens, valor, descricao, profiles!notas_user_id_fkey(nome_loja, pix_chave, pix_nome, pix_cidade)'
+        'id, status, itens, valor, descricao, profiles!notas_user_id_fkey(nome_loja, pix_chave, pix_nome, pix_cidade), eventos:eventos(tipo, metadata)'
       )
       .eq('id', id)
       .single()

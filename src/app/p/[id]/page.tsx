@@ -18,6 +18,7 @@ interface NotaPublica {
   valor: number
   descricao: string | null
   profiles: Pick<Profile, 'nome_loja' | 'pix_chave' | 'pix_nome' | 'pix_cidade'>
+  eventos?: { tipo: string; metadata: any }[]
 }
 
 export default function PublicPage() {
@@ -88,12 +89,16 @@ export default function PublicPage() {
         ).trim()
 
         try {
+          const totalParcial = (notaData.eventos || [])
+            .filter(ev => ev.tipo === 'pagamento_parcial')
+            .reduce((acc, ev) => acc + Number(ev.metadata?.valor || 0), 0)
+          const valorFinal = Number(notaData.valor) - totalParcial
+
           const code = gerarBRCode({
             chave: chavePix,
             nome: nomeRecebedor,
             cidade: cidadeRecebedor,
-            valor:
-              Number(notaData.valor) > 0 ? Number(notaData.valor) : undefined,
+            valor: valorFinal > 0 ? valorFinal : undefined,
             txid: id.substring(0, 25),
           })
 
@@ -242,16 +247,37 @@ export default function PublicPage() {
                 ))}
                 <div className="border-t border-divider mt-2 pt-2 flex justify-between text-sm font-bold">
                   <span>Total</span>
-                  <span>{formatCurrencyShort(Number(nota.valor))}</span>
+                  <span>{formatCurrencyShort(
+                    Number(nota.valor) - 
+                    (nota.eventos || [])
+                      .filter(ev => ev.tipo === 'pagamento_parcial')
+                      .reduce((acc, ev) => acc + Number(ev.metadata?.valor || 0), 0)
+                  )}</span>
                 </div>
+                {((nota.eventos || []).filter(ev => ev.tipo === 'pagamento_parcial').length > 0) && (
+                   <div className="flex justify-between text-[10px] text-text-muted mt-0.5">
+                     <span>Valor original</span>
+                     <span className="line-through">{formatCurrencyShort(Number(nota.valor))}</span>
+                   </div>
+                )}
               </div>
             )}
 
             {(!nota.itens || nota.itens.length === 0) && (
               <div className="mt-6 text-center">
                 <p className="text-3xl font-bold">
-                  {formatCurrencyShort(Number(nota.valor))}
+                  {formatCurrencyShort(
+                    Number(nota.valor) - 
+                    (nota.eventos || [])
+                      .filter(ev => ev.tipo === 'pagamento_parcial')
+                      .reduce((acc, ev) => acc + Number(ev.metadata?.valor || 0), 0)
+                  )}
                 </p>
+                {((nota.eventos || []).filter(ev => ev.tipo === 'pagamento_parcial').length > 0) && (
+                   <p className="text-xs text-text-muted mt-1">
+                     Total original: {formatCurrencyShort(Number(nota.valor))}
+                   </p>
+                )}
                 {nota.descricao && (
                   <p className="text-sm text-text-secondary mt-1">
                     {nota.descricao}
