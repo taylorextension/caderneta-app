@@ -457,7 +457,10 @@ export function NotaCard({
           Salvar alterações
         </Button>
         <button
-          onClick={() => setShowDeleteConfirm(true)}
+          onClick={() => {
+            setShowEditSheet(false)
+            setTimeout(() => setShowDeleteConfirm(true), 150)
+          }}
           className="w-full mt-3 h-12 text-sm font-medium text-red-500"
         >
           Excluir nota
