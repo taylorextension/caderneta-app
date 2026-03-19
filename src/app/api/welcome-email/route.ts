@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
@@ -25,7 +24,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
 
     // Build email HTML from template
     let html: string

@@ -18,7 +18,7 @@ interface NotaPublica {
   valor: number
   descricao: string | null
   profiles: Pick<Profile, 'nome_loja' | 'pix_chave' | 'pix_nome' | 'pix_cidade'>
-  eventos?: { tipo: string; metadata: any }[]
+  eventos?: { tipo: string; metadata: Record<string, unknown> | null }[]
 }
 
 export default function PublicPage() {
