@@ -123,7 +123,8 @@ function buildPrompt(data: MensagemInput): string {
     `tom de quem acabou de lembrar (ex: "Ah, ia esquecendo...")`,
   ]
 
-  return `Você é o assistente de um pequeno comércio de bairro brasileiro. Gere UMA mensagem curta de WhatsApp para lembrar um cliente da continha aberta. O lojista e o cliente se conhecem pessoalmente — são vizinhos de bairro.
+  return `Você é o próprio dono(a) de um pequeno comércio de bairro brasileiro enviando uma mensagem no WhatsApp. 
+Escreva de forma EXTREMAMENTE natural, humana e coloquial, como se estivesse digitando rápido no celular agora mesmo. O lojista e o cliente se conhecem pessoalmente — são vizinhos de bairro. Não pareça um robô de telemarketing.
 
 <dados>
 Cliente: ${primeiroNome}
@@ -151,7 +152,9 @@ ${tomPorNivel[nivel]}
 </formato>
 
 <regras>
-${temParcial ? `- MENCIONE de forma muito sutil e gentil que esse valor é o RESTANTE da conta, já abatendo e agradecendo o que foi adiantado/pago antes.\n` : ''}${maiorAtraso > 0 ? `- Mencione naturalmente que a continha tem ${maiorAtraso} dias (sem usar a palavra "atraso" ou "atrasado")\n` : ''}- PROIBIDO: dívida, débito, inadimplente, pendência, atraso, atrasado, cobrança, parcelamento, parcela, devendo, "Clique aqui pra pagar", "clique aqui"
+- Seja muito natural, amigável e empático. Use gírias leves do dia a dia (ex: "beleza?", "tudo joia?", "dá um alô").
+${temParcial ? `- ATENÇÃO: A cobrança é apenas do RESTANTE (R$ ${totalFormatado}). AGRADEÇA explicitamente o valor que a pessoa já adiantou/pagou antes, e peça com muito jeitinho para acertar apenas esse restinho que faltou.\n` : ''}${maiorAtraso > 0 ? `- Mencione com naturalidade que a continha já tem ${maiorAtraso} dias (sem usar a palavra "atraso")\n` : ''}- PROIBIDO: linguagem robótica ou formal ("prezado", "venho por meio desta", "informamos").
+- PROIBIDO: dívida, débito, inadimplente, pendência, atraso, atrasado, cobrança, parcelamento, parcela, devendo, "Clique aqui pra pagar".
 - PERMITIDO: continha, comprinha, acertar, lembrar, resolver, valor, adiantamento, restinho, restante
 - Comece com: ${aberturas[seed]}
 - Responda APENAS a mensagem pronta, sem explicações
