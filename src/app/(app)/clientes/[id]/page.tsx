@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Modal } from '@/components/ui/modal'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { CobrarSheet } from '@/components/cobrancas/cobrar-sheet'
-import { NotaCard } from '@/components/notas/nota-card'
+import { NotaCard, type DadosPagamentoParcial } from '@/components/notas/nota-card'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/solid'
 import { formatCurrencyShort, formatRelativeDate } from '@/lib/format'
@@ -54,6 +54,7 @@ export default function ClienteDetailPage() {
   const [loading, setLoading] = useState(true)
   const [cobrarNotas, setCobrarNotas] = useState<NotaComCliente[]>([])
   const [showWizard, setShowWizard] = useState(false)
+  const [parciaisMap, setParciaisMap] = useState<Map<string, number>>(new Map())
 
   // Client edit state
   const [showEditCliente, setShowEditCliente] = useState(false)
@@ -62,8 +63,10 @@ export default function ClienteDetailPage() {
   const [editTelefone, setEditTelefone] = useState('')
   const [showDeleteCliente, setShowDeleteCliente] = useState(false)
 
-  const totalPendente = pendentes.reduce((acc, n) => acc + Number(n.valor), 0)
   const totalPago = pagas.reduce((acc, n) => acc + Number(n.valor), 0)
+  
+  const totalParcialPendente = Array.from(parciaisMap.values()).reduce((a, b) => a + b, 0)
+  const totalPendente = pendentes.reduce((acc, n) => acc + Number(n.valor), 0) - totalParcialPendente
 
   const fetchData = useCallback(async () => {
     if (!profile) return
@@ -140,6 +143,22 @@ export default function ClienteDetailPage() {
 
       setPendentes(pendentesComAcao)
 
+      // Fetch partial payment totals
+      const pendentesIdsList = pendentesComAcao.map((n) => n.id)
+      const newParciaisMap = new Map<string, number>()
+      if (pendentesIdsList.length > 0) {
+        const { data: parcialEvents } = await supabase
+          .from('eventos')
+          .select('nota_id, metadata')
+          .in('nota_id', pendentesIdsList)
+          .eq('tipo', 'pagamento_parcial')
+        ;(parcialEvents || []).forEach((ev: { nota_id: string; metadata: Record<string, unknown> }) => {
+          const val = Number((ev.metadata as Record<string, unknown>)?.valor || 0)
+          newParciaisMap.set(ev.nota_id, (newParciaisMap.get(ev.nota_id) || 0) + val)
+        })
+      }
+      setParciaisMap(newParciaisMap)
+
       const { data: pagasData } = await supabase
         .from('notas')
         .select('*')
@@ -203,10 +222,58 @@ export default function ClienteDetailPage() {
   }, [profile, id, fetchData])
 
   const handleMarcarPago = useCallback(
-    async (nota: Nota) => {
+    async (nota: Nota, dados?: DadosPagamentoParcial) => {
       if (!profile) return
       try {
         const supabase = createClient()
+
+        if (dados?.parcial) {
+          // Partial payment: register event, maybe update due date, keep pendente
+          const totalParcialAtual = parciaisMap.get(nota.id) || 0
+          const novoTotalParcial = totalParcialAtual + dados.valorRecebido
+          const valorNota = Number(nota.valor)
+
+          await supabase.from('eventos').insert({
+            nota_id: nota.id,
+            cliente_id: id,
+            user_id: profile.id,
+            tipo: 'pagamento_parcial',
+            metadata: { valor: dados.valorRecebido },
+          })
+
+          // Update due date if provided
+          if (dados.novaDataVencimento) {
+            await supabase
+              .from('notas')
+              .update({ data_vencimento: dados.novaDataVencimento })
+              .eq('id', nota.id)
+          }
+
+          // If accumulated partials cover the full amount, mark as paid
+          if (novoTotalParcial >= valorNota) {
+            await supabase
+              .from('notas')
+              .update({ status: 'pago', data_pagamento: new Date().toISOString() })
+              .eq('id', nota.id)
+            await supabase.from('eventos').insert({
+              nota_id: nota.id,
+              cliente_id: id,
+              user_id: profile.id,
+              tipo: 'marcou_pago',
+            })
+            addToast({ message: 'Nota quitada por completo!', type: 'success' })
+          } else {
+            addToast({
+              message: `Parcial de ${dados.valorRecebido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} registrado!`,
+              type: 'success',
+            })
+          }
+
+          fetchData()
+          return
+        }
+
+        // Full payment
         await supabase
           .from('notas')
           .update({ status: 'pago', data_pagamento: new Date().toISOString() })
@@ -245,7 +312,7 @@ export default function ClienteDetailPage() {
         addToast({ message: 'Erro ao atualizar', type: 'error' })
       }
     },
-    [profile, id, addToast, fetchData]
+    [profile, id, addToast, fetchData, parciaisMap]
   )
 
   const handleEditNota = useCallback(
@@ -342,7 +409,7 @@ export default function ClienteDetailPage() {
 
       return {
         id: nota.id,
-        valor: Number(nota.valor),
+        valor: Number(nota.valor) - (parciaisMap.get(nota.id) || 0),
         data_vencimento: nota.data_vencimento || '',
         itens: nota.itens,
         descricao: nota.descricao,
@@ -472,9 +539,10 @@ export default function ClienteDetailPage() {
                         telefone: cliente.telefone,
                       }}
                       ultimaAcao={nota.ultimaAcao}
+                      totalParcial={parciaisMap.get(nota.id) || 0}
                       showAvatar={false}
                       onCobrar={() => setCobrarNotas([notaToComCliente(nota)])}
-                      onMarcarPago={() => handleMarcarPago(nota)}
+                      onMarcarPago={(dados) => handleMarcarPago(nota, dados)}
                       onEdit={handleEditNota}
                       onDelete={handleDeleteNota}
                     />

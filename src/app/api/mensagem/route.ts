@@ -160,9 +160,21 @@ MENSAGEM:`
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+
+    // Try cookie-based auth first (web), then Bearer token (mobile)
+    let user = (await supabase.auth.getUser()).data.user
+
+    if (!user) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.slice(7)
+        const { data, error } = await supabase.auth.getUser(token)
+        if (!error && data.user) {
+          user = data.user
+        }
+      }
+    }
+
     if (!user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }

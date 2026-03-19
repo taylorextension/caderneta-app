@@ -48,18 +48,37 @@ export default function ClientesPage() {
 
       const { data: notasData, error: nError } = await supabase
         .from('notas')
-        .select('cliente_id, valor, data_vencimento, status')
+        .select('id, cliente_id, valor, data_vencimento, status')
         .eq('user_id', profile.id)
         .eq('status', 'pendente')
 
       if (nError) throw nError
+
+      const pendentesIds = (notasData || []).map((n) => n.id)
+      const { data: parciaisData } = pendentesIds.length > 0
+        ? await supabase
+            .from('eventos')
+            .select('nota_id, metadata')
+            .eq('tipo', 'pagamento_parcial')
+            .in('nota_id', pendentesIds)
+        : { data: [] }
 
       const hoje = new Date()
       const result: CachedClienteResumo[] = (clientesData || []).map((c) => {
         const notasCliente = (notasData || []).filter(
           (n) => n.cliente_id === c.id
         )
-        const total = notasCliente.reduce((acc, n) => acc + Number(n.valor), 0)
+        const totalBruto = notasCliente.reduce((acc, n) => acc + Number(n.valor), 0)
+        
+        const parciaisCliente = (parciaisData || []).filter((p) => 
+          notasCliente.some((n) => n.id === p.nota_id)
+        )
+        const totalParcial = parciaisCliente.reduce(
+          (acc, p) => acc + Number((p.metadata as Record<string, unknown>)?.valor || 0), 
+          0
+        )
+        
+        const total = totalBruto - totalParcial
 
         const diasAtraso = notasCliente
           .filter((n) => n.data_vencimento)

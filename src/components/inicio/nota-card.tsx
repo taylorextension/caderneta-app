@@ -39,6 +39,7 @@ export function NotaCard({
       pix_copiado: 'Copiou o Pix',
       marcou_pago: 'Marcou como pago',
       desfez_pago: 'Pagamento desfeito',
+      pagamento_parcial: 'Pagamento parcial',
     }
     return labels[ultimaAcao.tipo] || ultimaAcao.tipo
   }

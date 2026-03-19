@@ -12,13 +12,18 @@ import { PageTransition } from '@/components/layout/page-transition'
 import { FAB } from '@/components/layout/fab'
 import { PwaInstallButton } from '@/components/pwa/pwa-install-banner'
 import { StatsBar } from '@/components/inicio/stats-bar'
-import { NotaCard } from '@/components/notas/nota-card'
+import { NotaCard, type DadosPagamentoParcial } from '@/components/notas/nota-card'
 import { CobrarSheet } from '@/components/cobrancas/cobrar-sheet'
 import { WizardVenda } from '@/components/vendas/wizard-venda'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
-import { ShoppingBagIcon } from '@heroicons/react/24/outline'
+import {
+  PlusIcon,
+  ChevronRightIcon,
+  ShoppingBagIcon,
+  CheckCircleIcon,
+} from '@heroicons/react/24/outline'
 import type { InicioData, NotaComCliente } from '@/types/database'
 
 export default function InicioPage() {
@@ -36,6 +41,7 @@ export default function InicioPage() {
   const [loading, setLoading] = useState(!cachedInicio)
   const [cobrarNotas, setCobrarNotas] = useState<NotaComCliente[]>([])
   const [showWizard, setShowWizard] = useState(false)
+  const [parciaisMap, setParciaisMap] = useState<Map<string, number>>(new Map())
   const [autoOpenNovoCliente, setAutoOpenNovoCliente] = useState(false)
 
   const fetchData = useCallback(async () => {
@@ -57,6 +63,7 @@ export default function InicioPage() {
       const carregarUltimasAcoes = async (notaIds: string[]) => {
         if (notaIds.length === 0) {
           setUltimasAcoes(new Map())
+          setParciaisMap(new Map())
           return
         }
 
@@ -68,11 +75,12 @@ export default function InicioPage() {
 
         const { data: eventosData } = await supabase
           .from('eventos')
-          .select('nota_id, tipo, created_at')
+          .select('nota_id, tipo, created_at, metadata')
           .in('nota_id', notaIds)
           .order('created_at', { ascending: false })
 
         const acoesMap = new Map<string, { tipo: string; created_at: string }>()
+        const newParciaisMap = new Map<string, number>()
 
         cobrancasData?.forEach((cobranca) => {
           const c = cobranca as CobrancaResumo
@@ -85,7 +93,7 @@ export default function InicioPage() {
         })
 
         eventosData?.forEach((evento) => {
-          const e = evento as EventoResumo
+          const e = evento as EventoResumo & { metadata?: Record<string, unknown> }
           const existing = acoesMap.get(e.nota_id)
           if (
             !existing ||
@@ -93,9 +101,15 @@ export default function InicioPage() {
           ) {
             acoesMap.set(e.nota_id, { tipo: e.tipo, created_at: e.created_at })
           }
+          // Accumulate partial payment totals
+          if (e.tipo === 'pagamento_parcial' && e.metadata) {
+            const val = Number(e.metadata.valor || 0)
+            newParciaisMap.set(e.nota_id, (newParciaisMap.get(e.nota_id) || 0) + val)
+          }
         })
 
         setUltimasAcoes(acoesMap)
+        setParciaisMap(newParciaisMap)
         setCachedAcoes(Object.fromEntries(acoesMap))
       }
 
@@ -145,7 +159,7 @@ export default function InicioPage() {
       endOfToday.setDate(endOfToday.getDate() + 1)
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-      const [pendentesRes, pagosHojeRes, pagosMesRes] = await Promise.all([
+      const [pendentesRes, pagosHojeRes, pagosMesRes, parciaisRes] = await Promise.all([
         supabase
           .from('notas')
           .select(
@@ -166,6 +180,11 @@ export default function InicioPage() {
           .eq('user_id', profile.id)
           .eq('status', 'pago')
           .gte('data_pagamento', startOfMonth.toISOString()),
+        supabase
+          .from('eventos')
+          .select('id, nota_id, cliente_id, created_at, metadata')
+          .eq('user_id', profile.id)
+          .eq('tipo', 'pagamento_parcial')
       ])
 
       if (pendentesRes.error) throw pendentesRes.error
@@ -174,14 +193,21 @@ export default function InicioPage() {
 
       const pendentes = (pendentesRes.data || []) as NotaBase[]
       const pagosHoje = (pagosHojeRes.data || []) as PagamentoBase[]
-      const pagosMes = (pagosMesRes.data || []) as Array<{
-        valor: number | string
+      const pagosMes = (pagosMesRes.data || []) as Array<{ valor: number | string }>
+      
+      const parciais = (parciaisRes.data || []) as Array<{
+        id: string
+        nota_id: string
+        cliente_id: string
+        created_at: string
+        metadata: { valor: number }
       }>
 
       const clienteIds = Array.from(
         new Set([
           ...pendentes.map((n) => n.cliente_id),
           ...pagosHoje.map((n) => n.cliente_id),
+          ...parciais.map((e) => e.cliente_id),
         ])
       )
 
@@ -246,20 +272,42 @@ export default function InicioPage() {
         }
       })
 
-      const recebidosHoje = pagosHoje.map((nota) => ({
-        id: nota.id,
-        valor: Number(nota.valor || 0),
-        cliente_nome: clientesMap.get(nota.cliente_id)?.nome || 'Cliente',
-      }))
+      const parciaisHoje = parciais
+        .filter(p => new Date(p.created_at) >= startOfToday && new Date(p.created_at) < endOfToday)
+        .map(p => ({
+          id: p.id,
+          valor: Number(p.metadata.valor || 0),
+          cliente_nome: clientesMap.get(p.cliente_id)?.nome || 'Cliente'
+        }))
+
+      const recebidosHoje = [
+        ...pagosHoje.map((nota) => ({
+          id: nota.id,
+          valor: Number(nota.valor || 0),
+          cliente_nome: clientesMap.get(nota.cliente_id)?.nome || 'Cliente',
+        })),
+        ...parciaisHoje
+      ]
+
+      const pendentesIds = new Set(pendentes.map(n => n.id))
+      const totalParcialDePendentes = parciais
+        .filter(p => pendentesIds.has(p.nota_id))
+        .reduce((acc, p) => acc + Number(p.metadata.valor || 0), 0)
 
       const totalPendente = pendentes.reduce(
         (acc, n) => acc + Number(n.valor || 0),
         0
-      )
+      ) - totalParcialDePendentes
+
+      const parciaisMes = parciais
+        .filter(p => new Date(p.created_at) >= startOfMonth)
+        .reduce((acc, p) => acc + Number(p.metadata.valor || 0), 0)
+
       const recebidoMes = pagosMes.reduce(
         (acc, n) => acc + Number(n.valor || 0),
         0
-      )
+      ) + parciaisMes
+
 
       const built: InicioData = {
         total_pendente: totalPendente,
@@ -348,10 +396,55 @@ export default function InicioPage() {
   }, [fetchData, profile])
 
   const handleMarcarPago = useCallback(
-    async (nota: NotaComCliente) => {
+    async (nota: NotaComCliente, dados?: DadosPagamentoParcial) => {
       if (!profile) return
       try {
         const supabase = createClient()
+
+        if (dados?.parcial) {
+          const totalParcialAtual = parciaisMap.get(nota.id) || 0
+          const novoTotalParcial = totalParcialAtual + dados.valorRecebido
+          const valorNota = Number(nota.valor)
+
+          await supabase.from('eventos').insert({
+            nota_id: nota.id,
+            cliente_id: nota.cliente_id,
+            user_id: profile.id,
+            tipo: 'pagamento_parcial',
+            metadata: { valor: dados.valorRecebido },
+          })
+
+          if (dados.novaDataVencimento) {
+            await supabase
+              .from('notas')
+              .update({ data_vencimento: dados.novaDataVencimento })
+              .eq('id', nota.id)
+          }
+
+          if (novoTotalParcial >= valorNota) {
+            await supabase
+              .from('notas')
+              .update({ status: 'pago', data_pagamento: new Date().toISOString() })
+              .eq('id', nota.id)
+            await supabase.from('eventos').insert({
+              nota_id: nota.id,
+              cliente_id: nota.cliente_id,
+              user_id: profile.id,
+              tipo: 'marcou_pago',
+            })
+            addToast({ message: 'Nota quitada por completo!', type: 'success' })
+          } else {
+            addToast({
+              message: `Parcial de ${dados.valorRecebido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} registrado!`,
+              type: 'success',
+            })
+          }
+
+          fetchData()
+          return
+        }
+
+        // Full payment
         await supabase
           .from('notas')
           .update({ status: 'pago', data_pagamento: new Date().toISOString() })
@@ -390,7 +483,7 @@ export default function InicioPage() {
         addToast({ message: 'Erro ao atualizar', type: 'error' })
       }
     },
-    [profile, addToast, fetchData]
+    [profile, addToast, fetchData, parciaisMap]
   )
 
   const handleEditNota = useCallback(
@@ -534,9 +627,13 @@ export default function InicioPage() {
                             telefone: nota.cliente_telefone,
                           }}
                           ultimaAcao={ultimasAcoes.get(nota.id)}
+                          totalParcial={parciaisMap.get(nota.id) || 0}
                           showAvatar={true}
-                          onCobrar={() => setCobrarNotas([nota])}
-                          onMarcarPago={() => handleMarcarPago(nota)}
+                          onCobrar={() => setCobrarNotas([{
+                            ...nota,
+                            valor: Number(nota.valor) - (parciaisMap.get(nota.id) || 0)
+                          }])}
+                          onMarcarPago={(dados) => handleMarcarPago(nota, dados)}
                           onEdit={handleEditNota}
                           onDelete={handleDeleteNota}
                         />
@@ -566,9 +663,13 @@ export default function InicioPage() {
                             telefone: nota.cliente_telefone,
                           }}
                           ultimaAcao={ultimasAcoes.get(nota.id)}
+                          totalParcial={parciaisMap.get(nota.id) || 0}
                           showAvatar={true}
-                          onCobrar={() => setCobrarNotas([nota])}
-                          onMarcarPago={() => handleMarcarPago(nota)}
+                          onCobrar={() => setCobrarNotas([{
+                            ...nota,
+                            valor: Number(nota.valor) - (parciaisMap.get(nota.id) || 0)
+                          }])}
+                          onMarcarPago={(dados) => handleMarcarPago(nota, dados)}
                           onEdit={handleEditNota}
                           onDelete={handleDeleteNota}
                         />
@@ -578,6 +679,39 @@ export default function InicioPage() {
                 </div>
               )}
             </div>
+
+            {data && data.recebidos_hoje.length > 0 && (
+              <div className="mt-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="h-2 w-2 rounded-full bg-success" />
+                  <h2 className="text-sm font-semibold text-text-primary">
+                    Recebidos hoje · {data.recebidos_hoje.length}
+                  </h2>
+                </div>
+                <div className="space-y-3">
+                  {data.recebidos_hoje.map((recebido) => (
+                    <Card key={recebido.id}>
+                      <div className="flex items-center gap-3 p-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10 shrink-0">
+                          <CheckCircleIcon className="h-5 w-5 text-success" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-text-primary truncate">
+                            {recebido.cliente_nome}
+                          </p>
+                          <p className="text-xs text-text-secondary">
+                            Pagamento registrado
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-success shrink-0">
+                          +{recebido.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </p>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

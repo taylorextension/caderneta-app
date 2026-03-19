@@ -21,6 +21,12 @@ function WhatsAppIcon({ className }: { className?: string }) {
   )
 }
 
+export interface DadosPagamentoParcial {
+  parcial: true
+  valorRecebido: number
+  novaDataVencimento?: string
+}
+
 interface NotaCardProps {
   nota: {
     id: string
@@ -43,9 +49,10 @@ interface NotaCardProps {
     tipo: 'lembrete_enviado' | 'link_aberto' | 'pix_copiado' | string
     created_at: string
   } | null
+  totalParcial?: number
   showAvatar?: boolean
   onCobrar: () => void
-  onMarcarPago: () => void
+  onMarcarPago: (dados?: DadosPagamentoParcial) => void
   onEdit?: (
     id: string,
     data: { descricao: string; valor: string; data_vencimento: string }
@@ -57,6 +64,7 @@ export function NotaCard({
   nota,
   cliente,
   ultimaAcao,
+  totalParcial = 0,
   showAvatar = true,
   onCobrar,
   onMarcarPago,
@@ -64,6 +72,10 @@ export function NotaCard({
   onDelete,
 }: NotaCardProps) {
   const [showConfirm, setShowConfirm] = useState(false)
+  const [showParcialSheet, setShowParcialSheet] = useState(false)
+  const [parcialValor, setParcialValor] = useState('')
+  const [parcialNovaData, setParcialNovaData] = useState('')
+  const [querNovaData, setQuerNovaData] = useState(false)
   const [showEditSheet, setShowEditSheet] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [editDescricao, setEditDescricao] = useState(nota.descricao || '')
@@ -84,6 +96,8 @@ export function NotaCard({
     : 0
   const vencido = diasAtraso > 0
 
+  const valorRestante = Number(nota.valor) - totalParcial
+
   const getStatusText = () => {
     if (nota.status === 'pago') return 'Pago'
     if (!nota.data_vencimento) return 'Sem vencimento'
@@ -101,6 +115,7 @@ export function NotaCard({
       pix_copiado: ClipboardDocumentCheckIcon,
       marcou_pago: ClipboardDocumentCheckIcon,
       desfez_pago: SparklesIcon,
+      pagamento_parcial: ClipboardDocumentCheckIcon,
     }
     return icons[tipo] || SparklesIcon
   }
@@ -112,6 +127,7 @@ export function NotaCard({
       pix_copiado: 'Copiou o Pix',
       marcou_pago: 'Marcou como pago',
       desfez_pago: 'Pagamento desfeito',
+      pagamento_parcial: 'Pagamento parcial',
     }
     return labels[tipo] || tipo
   }
@@ -130,10 +146,37 @@ export function NotaCard({
     return `${date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} · ${hora}`
   }
 
-  const handleConfirmarPago = () => {
+  const handleConfirmarPagoTotal = () => {
     onMarcarPago()
     setShowConfirm(false)
     addToast({ message: 'Pagamento registrado!', type: 'success' })
+  }
+
+  const handleAbrirParcial = () => {
+    setShowConfirm(false)
+    setParcialValor('')
+    setParcialNovaData(nota.data_vencimento || '')
+    setQuerNovaData(false)
+    setShowParcialSheet(true)
+  }
+
+  const handleConfirmarParcial = () => {
+    const valorNum = parseFloat(parcialValor.replace(',', '.'))
+    if (!valorNum || valorNum <= 0) {
+      addToast({ message: 'Informe um valor válido', type: 'error' })
+      return
+    }
+    if (valorNum > valorRestante) {
+      addToast({ message: 'Valor maior que o restante', type: 'error' })
+      return
+    }
+
+    onMarcarPago({
+      parcial: true,
+      valorRecebido: valorNum,
+      novaDataVencimento: querNovaData ? parcialNovaData : undefined,
+    })
+    setShowParcialSheet(false)
   }
 
   const handleSaveEdit = () => {
@@ -191,6 +234,14 @@ export function NotaCard({
               {formatCurrencyShort(Number(nota.valor))} · {getStatusText()}
             </p>
 
+            {/* Row 2.5: Partial payment info */}
+            {totalParcial > 0 && nota.status === 'pendente' && (
+              <p className="text-xs text-[#22C55E] mt-0.5">
+                Já recebido {formatCurrencyShort(totalParcial)} · Resta{' '}
+                {formatCurrencyShort(valorRestante)}
+              </p>
+            )}
+
             {/* Row 3: Last action */}
             {ultimaAcao && (
               <p className="text-xs text-text-secondary mt-1.5 flex items-center gap-1.5">
@@ -232,27 +283,143 @@ export function NotaCard({
         </div>
       </div>
 
-      {/* Payment confirmation modal */}
+      {/* Payment type selection modal */}
       <Modal open={showConfirm} onClose={() => setShowConfirm(false)}>
-        <h3 className="text-lg font-semibold mb-2 text-text-primary">
-          Confirmar pagamento?
+        <h3 className="text-lg font-semibold mb-1 text-text-primary">
+          Registrar pagamento
         </h3>
-        <p className="text-sm text-text-secondary mb-6">
+        <p className="text-sm text-text-secondary mb-5">
           {displayName} · {formatCurrencyShort(Number(nota.valor))}
+          {totalParcial > 0 && (
+            <span className="block text-xs text-[#22C55E] mt-1">
+              Já recebido {formatCurrencyShort(totalParcial)} · Resta{' '}
+              {formatCurrencyShort(valorRestante)}
+            </span>
+          )}
         </p>
-        <div className="flex gap-3">
-          <Button
-            variant="secondary"
-            className="flex-1"
-            onClick={() => setShowConfirm(false)}
+        <div className="space-y-2.5">
+          <button
+            onClick={handleConfirmarPagoTotal}
+            className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-[#E5E5E5] hover:border-[#163300]/30 hover:bg-[#163300]/[0.02] transition-all text-left group"
           >
-            Cancelar
-          </Button>
-          <Button className="flex-1" onClick={handleConfirmarPago}>
-            Confirmar
-          </Button>
+            <div className="h-9 w-9 rounded-full bg-[#22C55E]/10 flex items-center justify-center shrink-0">
+              <span className="text-base">✓</span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-text-primary">
+                Pago total
+              </p>
+              <p className="text-xs text-text-secondary">
+                {totalParcial > 0
+                  ? `Recebeu os ${formatCurrencyShort(valorRestante)} restantes`
+                  : 'Recebeu o valor completo'}
+              </p>
+            </div>
+          </button>
+          <button
+            onClick={handleAbrirParcial}
+            className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-[#E5E5E5] hover:border-[#163300]/30 hover:bg-[#163300]/[0.02] transition-all text-left group"
+          >
+            <div className="h-9 w-9 rounded-full bg-[#EAB308]/10 flex items-center justify-center shrink-0">
+              <span className="text-base">½</span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-text-primary">
+                Pago parcial
+              </p>
+              <p className="text-xs text-text-secondary">
+                Recebeu apenas parte do valor
+              </p>
+            </div>
+          </button>
         </div>
+        <button
+          onClick={() => setShowConfirm(false)}
+          className="w-full mt-3 py-2 text-sm text-text-secondary"
+        >
+          Cancelar
+        </button>
       </Modal>
+
+      {/* Partial payment BottomSheet */}
+      <BottomSheet
+        open={showParcialSheet}
+        onClose={() => setShowParcialSheet(false)}
+      >
+        <h3 className="text-lg font-semibold mb-1">Pagamento parcial</h3>
+        <p className="text-sm text-text-secondary mb-5">
+          Total da nota: {formatCurrencyShort(Number(nota.valor))}
+          {totalParcial > 0 && (
+            <span className="block text-xs text-[#22C55E] mt-0.5">
+              Já recebido: {formatCurrencyShort(totalParcial)} · Restante:{' '}
+              {formatCurrencyShort(valorRestante)}
+            </span>
+          )}
+        </p>
+        <div className="space-y-4">
+          <Input
+            label="Valor recebido (R$)"
+            inputMode="numeric"
+            value={parcialValor}
+            onChange={(e) => {
+              const numbersOnly = e.target.value.replace(/\D/g, '')
+              if (!numbersOnly) {
+                setParcialValor('')
+                return
+              }
+              const amount = (parseInt(numbersOnly, 10) / 100).toFixed(2)
+              setParcialValor(amount.replace('.', ','))
+            }}
+            placeholder="0,00"
+          />
+
+          {/* Toggle nova data */}
+          <div>
+            <button
+              onClick={() => setQuerNovaData(!querNovaData)}
+              className="flex items-center gap-2 text-sm text-text-primary"
+            >
+              <div
+                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                  querNovaData
+                    ? 'bg-[#163300] border-[#163300]'
+                    : 'border-[#D1D5DB]'
+                }`}
+              >
+                {querNovaData && (
+                  <svg
+                    className="h-3 w-3 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                )}
+              </div>
+              Nova data para o restante
+            </button>
+            {querNovaData && (
+              <div className="mt-3">
+                <Input
+                  label="Nova data de vencimento"
+                  type="date"
+                  value={parcialNovaData}
+                  onChange={(e) => setParcialNovaData(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+        <Button onClick={handleConfirmarParcial} className="w-full mt-6">
+          Confirmar pagamento parcial
+        </Button>
+      </BottomSheet>
 
       {/* Edit BottomSheet */}
       <BottomSheet open={showEditSheet} onClose={() => setShowEditSheet(false)}>

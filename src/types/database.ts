@@ -66,6 +66,7 @@ export type EventoTipo =
   | 'tempo_pagina'
   | 'marcou_pago'
   | 'desfez_pago'
+  | 'pagamento_parcial'
   | 'lembrete_enviado'
 
 export interface Evento {
