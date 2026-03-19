@@ -422,7 +422,7 @@ export default function ClienteDetailPage() {
         dias_atraso: diasAtraso > 0 ? diasAtraso : undefined,
       }
     },
-    [cliente, id]
+    [cliente, id, parciaisMap]
   )
 
   const handleCobrarTudo = useCallback(() => {
