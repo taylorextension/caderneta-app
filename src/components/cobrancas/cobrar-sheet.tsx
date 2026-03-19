@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -46,6 +47,7 @@ function renderWhatsAppMarkdown(text: string) {
 export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
   const profile = useAuthStore((s) => s.profile)
   const addToast = useUIStore((s) => s.addToast)
+  const router = useRouter()
   const [mensagem, setMensagem] = useState('')
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
@@ -144,6 +146,11 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
       addToast({ message: 'Cobrança registrada', type: 'success' })
       trackEvent('first_cobranca_sent')
       onClose()
+      
+      // Redirect to home after a small delay to allow toast to be seen
+      setTimeout(() => {
+        router.push('/inicio')
+      }, 500)
     } catch {
       addToast({ message: 'Erro ao registrar cobrança', type: 'error' })
     } finally {
