@@ -410,6 +410,7 @@ export default function ClienteDetailPage() {
       return {
         id: nota.id,
         valor: Number(nota.valor) - (parciaisMap.get(nota.id) || 0),
+        valor_original: (parciaisMap.get(nota.id) || 0) > 0 ? Number(nota.valor) : undefined,
         data_vencimento: nota.data_vencimento || '',
         itens: nota.itens,
         descricao: nota.descricao,

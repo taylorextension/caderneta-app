@@ -25,6 +25,7 @@ const mensagemRequestSchema = z.object({
           )
           .max(100),
         valor: z.coerce.number().nonnegative().max(1_000_000),
+        valor_original: z.coerce.number().nonnegative().max(1_000_000).optional(),
         data_vencimento: z.string().nullable(),
         vezes_cobrado: z.coerce.number().int().nonnegative().max(9999),
       })
@@ -92,6 +93,8 @@ function buildPrompt(data: MensagemInput): string {
   const maiorVezesCobrado = Math.max(...data.notas.map((n) => n.vezes_cobrado || 0), 0)
 
   const nivel = getUrgencyLevel(maiorAtraso, maiorVezesCobrado)
+  
+  const temParcial = data.notas.some((n) => n.valor_original !== undefined && n.valor_original > n.valor)
 
   // Monta lista de itens compacta
   const itensResumo = data.notas
@@ -124,7 +127,7 @@ function buildPrompt(data: MensagemInput): string {
 
 <dados>
 Cliente: ${primeiroNome}
-Valor: R$ ${totalFormatado}
+${temParcial ? `Valor RESTANTE a pagar (já abatidos os pagamentos parciais feitos): R$ ${totalFormatado}` : `Valor: R$ ${totalFormatado}`}
 ${refLoja ? `Loja: ${refLoja}\n` : ''}${nomeLojista ? `Lojista: ${nomeLojista}\n` : ''}${itensResumo ? `Itens: ${itensResumo}\n` : ''}${maiorAtraso > 0 ? `Dias desde vencimento: ${maiorAtraso}\n` : ''}${maiorVezesCobrado > 0 ? `Vezes já lembrado: ${maiorVezesCobrado}\n` : ''}</dados>
 
 <tom>
@@ -148,8 +151,8 @@ ${tomPorNivel[nivel]}
 </formato>
 
 <regras>
-${maiorAtraso > 0 ? `- Mencione naturalmente que a continha tem ${maiorAtraso} dias (sem usar a palavra "atraso" ou "atrasado")\n` : ''}- PROIBIDO: dívida, débito, inadimplente, pendência, atraso, atrasado, cobrança, parcelamento, parcela, devendo, "Clique aqui pra pagar", "clique aqui"
-- PERMITIDO: continha, comprinha, acertar, lembrar, resolver, valor
+${temParcial ? `- MENCIONE de forma muito sutil e gentil que esse valor é o RESTANTE da conta, já abatendo e agradecendo o que foi adiantado/pago antes.\n` : ''}${maiorAtraso > 0 ? `- Mencione naturalmente que a continha tem ${maiorAtraso} dias (sem usar a palavra "atraso" ou "atrasado")\n` : ''}- PROIBIDO: dívida, débito, inadimplente, pendência, atraso, atrasado, cobrança, parcelamento, parcela, devendo, "Clique aqui pra pagar", "clique aqui"
+- PERMITIDO: continha, comprinha, acertar, lembrar, resolver, valor, adiantamento, restinho, restante
 - Comece com: ${aberturas[seed]}
 - Responda APENAS a mensagem pronta, sem explicações
 </regras>

@@ -631,7 +631,8 @@ export default function InicioPage() {
                           showAvatar={true}
                           onCobrar={() => setCobrarNotas([{
                             ...nota,
-                            valor: Number(nota.valor) - (parciaisMap.get(nota.id) || 0)
+                            valor: Number(nota.valor) - (parciaisMap.get(nota.id) || 0),
+                            valor_original: (parciaisMap.get(nota.id) || 0) > 0 ? Number(nota.valor) : undefined
                           }])}
                           onMarcarPago={(dados) => handleMarcarPago(nota, dados)}
                           onEdit={handleEditNota}
@@ -667,7 +668,8 @@ export default function InicioPage() {
                           showAvatar={true}
                           onCobrar={() => setCobrarNotas([{
                             ...nota,
-                            valor: Number(nota.valor) - (parciaisMap.get(nota.id) || 0)
+                            valor: Number(nota.valor) - (parciaisMap.get(nota.id) || 0),
+                            valor_original: (parciaisMap.get(nota.id) || 0) > 0 ? Number(nota.valor) : undefined
                           }])}
                           onMarcarPago={(dados) => handleMarcarPago(nota, dados)}
                           onEdit={handleEditNota}

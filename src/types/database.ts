@@ -90,6 +90,7 @@ export interface InicioData {
 export interface NotaComCliente {
   id: string
   valor: number
+  valor_original?: number
   data_vencimento: string
   itens: ItemNota[]
   descricao: string | null
