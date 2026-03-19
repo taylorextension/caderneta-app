@@ -63,10 +63,10 @@ export default function ClienteDetailPage() {
   const [editTelefone, setEditTelefone] = useState('')
   const [showDeleteCliente, setShowDeleteCliente] = useState(false)
 
-  const totalPago = pagas.reduce((acc, n) => acc + Number(n.valor), 0)
-  
   const totalParcialPendente = Array.from(parciaisMap.values()).reduce((a, b) => a + b, 0)
   const totalPendente = pendentes.reduce((acc, n) => acc + Number(n.valor), 0) - totalParcialPendente
+  
+  const totalPago = pagas.reduce((acc, n) => acc + Number(n.valor), 0) + totalParcialPendente
 
   const fetchData = useCallback(async () => {
     if (!profile) return

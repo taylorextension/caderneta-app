@@ -149,7 +149,7 @@ export default function HistoricoPage() {
         })
       }
 
-      const formattedNotas: NotaPaga[] = notasRows.map((n) => {
+      const formattedNotas: NotaPaga[] = combinedRows.map((n) => {
         const cliente = clientesMap.get(n.cliente_id)
         return {
           id: n.id,
