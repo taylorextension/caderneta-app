@@ -11,6 +11,7 @@ import { openWhatsApp } from '@/lib/whatsapp'
 import { formatCurrencyShort } from '@/lib/format'
 import { trackEvent } from '@/lib/analytics'
 import { ArrowPathIcon, PencilIcon, LinkIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline'
+import { CheckIcon } from '@heroicons/react/24/solid'
 import type { NotaComCliente } from '@/types/database'
 
 interface CobrarSheetProps {
@@ -49,6 +50,7 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [copied, setCopied] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const total = notas.reduce((acc, n) => acc + Number(n.valor), 0)
@@ -154,11 +156,30 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
     : null
 
   async function handleCopy() {
+    const fullMessage = `${mensagem}\n\n${linkPix}`
+    
     try {
-      const fullMessage = `${mensagem}\n\n${linkPix}`
-      await navigator.clipboard.writeText(fullMessage)
-      addToast({ message: 'Mensagem copiada com sucesso!', type: 'success' })
-    } catch {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(fullMessage)
+      } else {
+        // Fallback: older browsers or non-secure contexts
+        const textArea = document.createElement('textarea')
+        textArea.value = fullMessage
+        textArea.style.position = 'fixed'
+        textArea.style.left = '-9999px'
+        textArea.style.top = '0'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        document.execCommand('copy')
+        textArea.remove()
+      }
+      
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+      addToast({ message: 'Copiado para a área de transferência!', type: 'success' })
+    } catch (err) {
+      console.error('Erro ao copiar:', err)
       addToast({ message: 'Erro ao copiar mensagem', type: 'error' })
     }
   }
@@ -188,10 +209,18 @@ export function CobrarSheet({ open, onClose, notas }: CobrarSheetProps) {
         <button
           onClick={handleCopy}
           title="Copiar mensagem completa"
-          className="shrink-0 px-3 py-1.5 rounded-full bg-[#163300]/5 text-xs font-semibold text-text-secondary hover:bg-[#163300]/10 transition-colors flex items-center gap-1.5 active:scale-95"
+          className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all duration-300 active:scale-95 ${
+            copied
+              ? 'bg-[#9FE870] text-[#163300] shadow-sm scale-105'
+              : 'bg-[#163300]/5 text-text-secondary hover:bg-[#163300]/10'
+          }`}
         >
-          <DocumentDuplicateIcon className="h-3.5 w-3.5" />
-          Copiar
+          {copied ? (
+            <CheckIcon className="h-3.5 w-3.5" />
+          ) : (
+            <DocumentDuplicateIcon className="h-3.5 w-3.5" />
+          )}
+          {copied ? 'Copiado' : 'Copiar'}
         </button>
       </div>
 
