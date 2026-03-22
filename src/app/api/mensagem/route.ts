@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { getGoogleAI } from '@/lib/ai'
 import { hasAppAccess } from '@/lib/subscription'
 import { z } from 'zod'
@@ -169,12 +170,13 @@ export async function POST(request: NextRequest) {
 
     // Try cookie-based auth first (web), then Bearer token (mobile)
     let user = (await supabase.auth.getUser()).data.user
+    let bearerToken: string | null = null
 
     if (!user) {
       const authHeader = request.headers.get('authorization')
       if (authHeader?.startsWith('Bearer ')) {
-        const token = authHeader.slice(7)
-        const { data, error } = await supabase.auth.getUser(token)
+        bearerToken = authHeader.slice(7)
+        const { data, error } = await supabase.auth.getUser(bearerToken)
         if (!error && data.user) {
           user = data.user
         }
@@ -185,7 +187,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const { data: profile } = await supabase
+    // When authenticated via Bearer token (mobile), create a client with the
+    // user's JWT so RLS policies work correctly for subsequent queries.
+    const dbClient = bearerToken
+      ? createSupabaseClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          { global: { headers: { Authorization: `Bearer ${bearerToken}` } } }
+        )
+      : supabase
+
+    const { data: profile } = await dbClient
       .from('profiles')
       .select('assinatura_ativa, trial_fim')
       .eq('id', user.id)
